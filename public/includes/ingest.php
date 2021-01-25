@@ -26,14 +26,12 @@ function ingest(\stdClass $response) { //{{{
     $db = new DB();
     
     // get monitora ID
-    $mResp = $db->getMonitora($response->identifier);
-    if (!isset($mResp[0])) {
+    if (!($mResp = $db->getMonitora($response->identifier))) {
         throw new \Exception('Unrecognised monitora');
     }
     
     // get week ID
-    $wResp = $db->getWeek($response->weekStart);
-    if (!isset($wResp[0])) {
+    if (!($wResp = $db->getWeek($response->weekStart))) {
         throw new \Exception('Unrecognised date');
     }
     
@@ -44,13 +42,8 @@ function ingest(\stdClass $response) { //{{{
     
     // loop over fields in response
     foreach ($response as $field => $value) {
-        // reasons to skip this field
-        if (!$value) {
-            continue;
-        }
-
-        // get information about question
-        if (!($qResp = $db->getQuestion($field))) {
+        // get information about question if value not empty
+        if (!$value || !($qResp = $db->getQuestion($field))) {
             continue;
         }
         
