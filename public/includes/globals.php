@@ -7,5 +7,6 @@ namespace PERUCOVID;
 require_once 'autoload.php';
 
 define('BASE_PATH', __DIR__ . '/../'); // points to public directory
+define('RESPONSE_DIR', '/home/perucovid/responses/');
 
 ?>

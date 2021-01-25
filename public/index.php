@@ -19,6 +19,12 @@ try {
         throw new \Exception('Problem decoding JSON string');
     }
     
+    // write JSON to file
+    $filename = tempnam(RESPONSE_DIR, 'survey');
+    if (!file_put_contents($filename, $json)) {
+        throw new \Exception('Problem writing JSON to file');
+    }
+    
     // ingest response
     ingest($response);
     $message = 'success';
