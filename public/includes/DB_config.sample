@@ -1,0 +1,14 @@
+<?php
+
+// database settings, server dependent
+// keep out of Git
+
+declare(strict_types=1);
+
+namespace PERUCOVID;
+
+$PC_DSN = 'mysql:host=hostname;dbname=dbname';
+$PC_DB_USER = 'dbuser';
+$PC_DB_PASS = 'dbpassword';
+
+?>

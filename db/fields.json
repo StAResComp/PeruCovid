@@ -1,0 +1,18 @@
+{
+  "ageBands": {"type": "series", "items": "Under 18, 18 - 24, 25 - 34, 35 - 44, 45 - 54, 55 - 64, 65 - 74, 75 - 84, 85 or older"},
+  "maleInfections": {"type": "question", "series": "ageBands", "data": "numeric"},
+  "femaleInfections": {"type": "question", "series": "ageBands", "data": "numeric"},
+  "hospitalTransfers": {"type": "question", "data": "numeric"},
+  "maleDeaths": {"type": "question", "series": "ageBands", "data": "numeric"},
+  "femaleDeaths": {"type": "question", "series": "ageBands", "data": "numeric"},
+  "placesOfTreatment": {"type": "series", "items": "Patient's House, Healer, Health Centre, Private Clinic, Pharmacy, Hospital, Health Post, None"},
+  "placesOfTreatmentCounts": {"type": "question", "series": "placesOfTreatment", "data": "numeric"},
+  "malesQuarantined": {"type": "question", "series": "ageBands", "data": "numeric"},
+  "femalesQuarantined": {"type": "question", "series": "ageBands", "data": "numeric"},
+  "oxygenAvailability": {"type": "question", "data": "string"},
+  "numTests": {"type": "question", "data": "numeric"},
+  "numPositiveTests": {"type": "question", "data": "numeric"},
+  "numBeds": {"type": "question", "data": "numeric"},
+  "governmentVisits": {"type": "question", "data": "string"},
+  "vaccinesDistributed": {"type": "question", "data": "numeric"}
+}

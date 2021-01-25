@@ -1,0 +1,5 @@
+# server specific settings
+DBHOST = 
+DBPORT = 
+DBUSER = 
+DBNAME = 
