@@ -15,7 +15,9 @@ try {
         throw new \Exception('No data sent');
     }
     
-    $response = json_decode($json);
+    if (!$response = json_decode($json)) {
+        throw new \Exception('Problem decoding JSON string');
+    }
     
     // ingest response
     ingest($response);
