@@ -17,7 +17,7 @@ namespace PERUCOVID;
  */
 function ingest(\stdClass $response) { //{{{
     // need identifier and week
-    if (!isset($response->identifier) &&
+    if (!isset($response->identifier) ||
         !isset($response->weekStart)) {
         throw new \Exception('Need identifier and week');
     }
