@@ -12,13 +12,13 @@ $message = 'UnknownError';
 
 try {
     // check for HTTP header
-    $headers = apache_request_headers();
-    if (!isset($headers['Qualtrics'])) {
+    $headers = array_change_key_case(apache_request_headers());
+    if (!isset($headers['qualtrics'])) {
         throw new \Exception('HeaderMissing');
     }
     
     $apiKey = trim(file_get_contents(API_KEY_FILE));
-    if ($headers['Qualtrics'] != $apiKey) {
+    if ($headers['qualtrics'] != $apiKey) {
         throw new \Exception('ApiKeyMismatch');
     }
     
