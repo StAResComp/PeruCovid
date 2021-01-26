@@ -60,6 +60,9 @@ function ingest(\stdClass $response) { //{{{
         }
             
         foreach ($answers as $i => $answer) {
+            // trim strings
+            $answer = is_string($answer) ? trim($answer) : $answer;
+            
             $resp = $db->addAnswer($responseID, 
                                    $qResp[$i]->question_id, 
                                    'numeric' == $qResp[$i]->data_type 
