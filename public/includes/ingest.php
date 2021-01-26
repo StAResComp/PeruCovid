@@ -27,13 +27,14 @@ function ingest(\stdClass $response) { //{{{
     
     // get monitora ID
     if (!($mResp = $db->getMonitora($response->identifier))) {
-        throw new \Exception('UnrecognisedMonitora');
+        throw new \Exception(sprintf('UnrecognisedMonitora|%s',
+                                     $response->identifier));
     }
     
     // get week ID
     if (!($wResp = $db->getWeek($response->weekStart))) {
         throw new \Exception(sprintf('UnrecognisedDate|%s',
-                                     $mResp[0]->monitora_id));
+                                     $response->identifier));
     }
     
     // create new response
@@ -54,7 +55,7 @@ function ingest(\stdClass $response) { //{{{
         // make sure number of answers matches number of items in series
         if (count($answers) != count($qResp)) {
             throw new \Exception(sprintf('ItemCountMismatch|%s|%s',
-                                         $mResp[0]->monitora_id,
+                                         $response->identifier,
                                          $field));
         }
             
@@ -66,7 +67,7 @@ function ingest(\stdClass $response) { //{{{
                                    $answer);
             if (!$resp || !$resp[0]->updated) {
                 throw new \Exception(sprintf('ProblemAddingAnswer|%s|%s|%s',
-                                             $mResp[0]->monitora_id,
+                                             $response->identifier,
                                              $field, $answer));
             }
         }
