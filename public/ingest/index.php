@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace PERUCOVID;
 
-require_once 'includes/globals.php';
-require_once 'includes/ingest.php';
-require_once 'includes/email.php';
+require_once '../includes/globals.php';
+require_once '../includes/ingest.php';
+require_once '../includes/email.php';
 
 $message = 'UnknownError';
 
