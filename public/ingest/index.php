@@ -11,6 +11,17 @@ require_once '../includes/email.php';
 $message = 'UnknownError';
 
 try {
+    // check for HTTP header
+    $headers = apache_request_headers();
+    if (!isset($headers['Qualtrics'])) {
+        throw new \Exception('HeaderMissing');
+    }
+    
+    $apiKey = trim(file_get_contents(API_KEY_FILE));
+    if ($headers['Qualtrics'] != $apiKey) {
+        throw new \Exception('ApiKeyMismatch');
+    }
+    
     // read JSON from INPUT
     if (!($json = file_get_contents('php://input'))) {
         throw new \Exception('NoData');
