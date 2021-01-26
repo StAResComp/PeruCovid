@@ -6,28 +6,40 @@ namespace PERUCOVID;
 
 require_once 'includes/globals.php';
 require_once 'includes/ingest.php';
+require_once 'includes/email.php';
 
-$message = 'Unknown error';
+$message = 'UnknownError';
 
 try {
     // read JSON from INPUT
     if (!($json = file_get_contents('php://input'))) {
-        throw new \Exception('No data sent');
+        throw new \Exception('NoData');
     }
     
     if (!$response = json_decode($json)) {
-        throw new \Exception('Problem decoding JSON string');
+        throw new \Exception('ProblemWithJSON');
     }
     
     // write JSON to file
     $filename = tempnam(RESPONSE_DIR, 'survey');
     if (!file_put_contents($filename, $json)) {
-        throw new \Exception('Problem writing JSON to file');
+        throw new \Exception('ProblemWritingJSON');
     }
     
     // ingest response
-    ingest($response);
-    $message = 'success';
+    try {
+        ingest($response);
+        $message = 'success';
+    }
+    catch (\Throwable $e) {
+        // split error message on |
+        $strings = explode('|', $e->getMessage());
+        
+        // email error
+        email($strings);
+        
+        throw new \Exception($strings[0]);
+    }
 }
 catch (\Throwable $e) {
     header('HTTP/1.0 400 Bad Request', true, 400);

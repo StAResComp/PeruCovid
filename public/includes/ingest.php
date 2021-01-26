@@ -19,7 +19,7 @@ function ingest(\stdClass $response) { //{{{
     // need identifier and week
     if (!isset($response->identifier) ||
         !isset($response->weekStart)) {
-        throw new \Exception('Need identifier and week');
+        throw new \Exception('MissingIdentifierAndWeek');
     }
     
     // connect to DB - need to commit on success
@@ -27,12 +27,13 @@ function ingest(\stdClass $response) { //{{{
     
     // get monitora ID
     if (!($mResp = $db->getMonitora($response->identifier))) {
-        throw new \Exception('Unrecognised monitora');
+        throw new \Exception('UnrecognisedMonitora');
     }
     
     // get week ID
     if (!($wResp = $db->getWeek($response->weekStart))) {
-        throw new \Exception('Unrecognised date');
+        throw new \Exception(sprintf('UnrecognisedDate|%s',
+                                     $mResp[0]->monitora_id));
     }
     
     // create new response
@@ -52,7 +53,9 @@ function ingest(\stdClass $response) { //{{{
 
         // make sure number of answers matches number of items in series
         if (count($answers) != count($qResp)) {
-            throw new \Exception('Incorrect number of items in answer');
+            throw new \Exception(sprintf('ItemCountMismatch|%s|%s',
+                                         $mResp[0]->monitora_id,
+                                         $field));
         }
             
         foreach ($answers as $i => $answer) {
@@ -61,8 +64,10 @@ function ingest(\stdClass $response) { //{{{
                                    'numeric' == $qResp[$i]->data_type 
                                    ? $answer : NULL, 
                                    $answer);
-            if (!$resp[0]->updated) {
-                throw new \Exception('Problem adding answer');
+            if (!$resp || !$resp[0]->updated) {
+                throw new \Exception(sprintf('ProblemAddingAnswer|%s|%s|%s',
+                                             $mResp[0]->monitora_id,
+                                             $field, $answer));
             }
         }
     }

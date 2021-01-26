@@ -1,2 +1,4 @@
 # don't want DB details in git
 DB_config.php
+# don't want actual ini file in git
+*.ini
