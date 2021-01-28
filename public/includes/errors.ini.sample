@@ -1,3 +1,5 @@
+; <?php exit(); ?>
+; above line stops file being exposed through website
 ; config file for error messages
 
 [email_recipients]
