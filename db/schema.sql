@@ -72,3 +72,19 @@ CREATE TABLE answers (
   FOREIGN KEY (question_id) REFERENCES questions (question_id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
+-- add communities
+INSERT 
+  INTO communities 
+       ('community_string')
+VALUES ('Máncora'),
+       ('Los Organos'),
+       ('El Ñuro'),
+       ('Cabo Blanco'),
+       ('Talara'),
+       ('Puerto Nuevo'),
+       ('Yacila'),
+       ('La Islilla'),
+       ('La Tortuga'),
+       ('Sechura'),
+       ('Parachique'),
+       ('Puerto Rico');

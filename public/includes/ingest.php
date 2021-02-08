@@ -65,16 +65,29 @@ function ingest(\stdClass $response) { //{{{
         
         foreach ($answers as $i => $answer) {
             // trim strings
-            $answer = is_string($answer) ? [trim($answer)] : [$answer];
+            $answer = is_string($answer) ? trim($answer) : $answer;
+            // check for empty answer
+            if ('' == $answer) {
+                continue;
+            }
+            
             $structureID = NULL;
             
             // is answer a multiple one?
             if ($qResp[$i]->is_multiple) {
+                // all multiple answers empty
+                if ('' == str_replace($delims[1], '', $answer)) {
+                    continue;
+                }
+                
                 $answer = explode($delims[1], $answer[0]);
             
                 // get structure ID for multiple answers
                 $sResp = $db->addStructure();
                 $structureID = $sResp[0]->structure_id;
+            }
+            else {
+                $answer = [$answer];
             }
             
             foreach ($answer as $a) {
