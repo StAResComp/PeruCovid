@@ -80,7 +80,7 @@ function ingest(\stdClass $response) { //{{{
                     continue;
                 }
                 
-                $answer = explode($delims[1], $answer[0]);
+                $answer = explode($delims[1], $answer);
             
                 // get structure ID for multiple answers
                 $sResp = $db->addStructure();
