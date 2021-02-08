@@ -1,9 +1,8 @@
 -- monitora details
-DROP TABLE IF EXISTS monitoras CASCADE;
-CREATE TABLE monitoras (
-  monitora_id SERIAL PRIMARY KEY,
-  monitora_string VARCHAR(32)
-  -- other details
+DROP TABLE IF EXISTS communities CASCADE;
+CREATE TABLE communities (
+  community_id SERIAL PRIMARY KEY,
+  community_string VARCHAR(32)
 );
 
 -- start of week
@@ -27,6 +26,8 @@ CREATE TABLE series_items (
   series_id INTEGER,
   item_string VARCHAR(32),
   item_number INTEGER,
+  data_type VARCHAR(8),
+  is_multiple BOOLEAN DEFAULT 'false',
   FOREIGN KEY (series_id) REFERENCES series (series_id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
@@ -37,6 +38,8 @@ CREATE TABLE questions (
   item_id INTEGER DEFAULT NULL,
   question_string VARCHAR(32),
   data_type VARCHAR(8),
+--  is_structure BOOLEAN DEFAULT 'false',
+  is_multiple BOOLEAN DEFAULT 'false',
   FOREIGN KEY (item_id) REFERENCES series_items (item_id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
@@ -44,11 +47,17 @@ CREATE TABLE questions (
 DROP TABLE IF EXISTS responses CASCADE;
 CREATE TABLE responses (
   response_id SERIAL PRIMARY KEY,
-  monitora_id INTEGER,
+  community_id INTEGER,
   week_id INTEGER,
   time_stamp TIMESTAMP DEFAULT NOW(),
-  FOREIGN KEY (monitora_id) REFERENCES monitoras (monitora_id) ON DELETE CASCADE ON UPDATE CASCADE,
+  FOREIGN KEY (community_id) REFERENCES communities (community_id) ON DELETE CASCADE ON UPDATE CASCADE,
   FOREIGN KEY (week_id) REFERENCES weeks (week_id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- structure to link multi-part questions (e.g. landing data)
+DROP TABLE IF EXISTS structures CASCADE;
+CREATE TABLE structures (
+  structure_id SERIAL PRIMARY KEY
 );
 
 -- answer to individual question in response to survey
@@ -56,6 +65,7 @@ DROP TABLE IF EXISTS answers CASCADE;
 CREATE TABLE answers (
   response_id INTEGER,
   question_id INTEGER,
+  structure_id INTEGER DEFAULT NULL,
   numeric_value NUMERIC,
   string_value TEXT,
   FOREIGN KEY (response_id) REFERENCES responses (response_id) ON DELETE CASCADE ON UPDATE CASCADE,

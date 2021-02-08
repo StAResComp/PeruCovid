@@ -16,29 +16,32 @@ namespace PERUCOVID;
  ******
  */
 function ingest(\stdClass $response) { //{{{
-    // need identifier and week
-    if (!isset($response->identifier) ||
+    // delimiters for multi-answer fields
+    $delims = ['|', ','];
+    
+    // need community identifier and week
+    if (!isset($response->community) ||
         !isset($response->weekStart)) {
-        throw new \Exception('MissingIdentifierAndWeek');
+        throw new \Exception('MissingCommunityOrWeek');
     }
     
     // connect to DB - need to commit on success
     $db = new DB();
     
-    // get monitora ID
-    if (!($mResp = $db->getMonitora($response->identifier))) {
-        throw new \Exception(sprintf('UnrecognisedMonitora|%s',
-                                     $response->identifier));
+    // get community ID
+    if (!($cResp = $db->getCommunity($response->community))) {
+        throw new \Exception(sprintf('UnrecognisedComunity|%s',
+                                     $response->community));
     }
     
     // get week ID
     if (!($wResp = $db->getWeek($response->weekStart))) {
         throw new \Exception(sprintf('UnrecognisedDate|%s',
-                                     $response->identifier));
+                                     $response->community));
     }
     
     // create new response
-    $resp = $db->addResponse($mResp[0]->monitora_id,
+    $resp = $db->addResponse($cResp[0]->community_id,
                              $wResp[0]->week_id);
     $responseID = $resp[0]->response_id;
     
@@ -49,29 +52,52 @@ function ingest(\stdClass $response) { //{{{
             continue;
         }
         
-        // series of answers, so split on ',', or single answer
-        $answers = $qResp[0]->item_id ? explode(',', $value) : [$value];
+        // series of answers, so split on delimiter, or single answer
+        $answers = $qResp[0]->item_id ? 
+          explode($delims[0], $value) : [$value];
 
         // make sure number of answers matches number of items in series
         if (count($answers) != count($qResp)) {
             throw new \Exception(sprintf('ItemCountMismatch|%s|%s',
-                                         $response->identifier,
+                                         $response->community,
                                          $field));
         }
-            
+        
         foreach ($answers as $i => $answer) {
             // trim strings
-            $answer = is_string($answer) ? trim($answer) : $answer;
+            $answer = is_string($answer) ? [trim($answer)] : [$answer];
+            $structureID = NULL;
             
-            $resp = $db->addAnswer($responseID, 
-                                   $qResp[$i]->question_id, 
-                                   'numeric' == $qResp[$i]->data_type 
-                                   ? $answer : NULL, 
-                                   $answer);
-            if (!$resp || !$resp[0]->updated) {
-                throw new \Exception(sprintf('ProblemAddingAnswer|%s|%s|%s',
-                                             $response->identifier,
-                                             $field, $answer));
+            // is answer a multiple one?
+            if ($qResp[$i]->is_multiple) {
+                $answer = explode($delims[1], $answer[0]);
+            
+                // get structure ID for multiple answers
+                $sResp = $db->addStructure();
+                $structureID = $sResp[0]->structure_id;
+            }
+            
+            foreach ($answer as $a) {
+                // trim answer
+                $a = is_string($a) ? trim($a) : $a;
+                if ('' == $a) {
+                    continue;
+                }
+                
+                // get numeric value if needed
+                $n = ('numeric' == $qResp[$i]->data_type) 
+                  && ((string) floatval($a) == $a) ? floatval($a) : NULL;
+                
+                $resp = $db->addAnswer($responseID, 
+                                       $qResp[$i]->question_id, 
+                                       $structureID,
+                                       $n, $a);
+            
+                if (!$resp || !$resp[0]->updated) {
+                    throw new \Exception(sprintf('ProblemAddingAnswer|%s|%s|%s',
+                                                 $response->community,
+                                                 $field, $a));
+                }
             }
         }
     }

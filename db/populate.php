@@ -20,26 +20,39 @@ foreach ($fields as $field => $params) {
         $resp = $db->addSeries($field);
         $seriesID = $resp[0]->series_id;
         
+        // some questions in series might be multiple
+        $multiple = isset($params->multiple) ? $params->multiple 
+          : array_fill(0, count($params->items), 'false');
+        
         // add items in series
-        $items = explode(',', $params->items);
-        foreach ($items as $i => $item) {
-            $resp = $db->addSeriesItem($seriesID, trim($item), $i + 1);
+        foreach ($params->items as $i => $item) {
+            $db->addSeriesItem($seriesID, trim($item), $i + 1, 
+                               $params->data[$i], $multiple[$i]);
         }
+        
         break;
         
         // question information
      case 'question':
+        // override field name for question
+        if (isset($params->question)) {
+            $field = $params->question;
+        }
+        
         // question uses a series
         if (isset($params->series)) {
             $seriesItems = $db->getSeries($params->series);
             foreach ($seriesItems as $item) {
-                $db->addQuestion($field, $item->item_id, $params->data);
+                $db->addQuestion($field, $item->item_id, 
+                                 $item->data_type, 
+                                 $item->is_multiple ? 'true' : 'false');
             }
         }
         // single question
         else {
-            $db->addQuestion($field, NULL, $params->data);
+            $db->addQuestion($field, NULL, $params->data, 'false');
         }
+        
         break;
         
      default:
