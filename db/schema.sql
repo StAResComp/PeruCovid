@@ -75,7 +75,7 @@ CREATE TABLE answers (
 -- add communities
 INSERT 
   INTO communities 
-       ('community_string')
+       (community_string)
 VALUES ('Máncora'),
        ('Los Organos'),
        ('El Ñuro'),
