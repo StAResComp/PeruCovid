@@ -100,7 +100,7 @@ $FUNC$ LANGUAGE plpgsql SECURITY DEFINER VOLATILE;
  ******
  */
 CREATE OR REPLACE FUNCTION addSeries ( --{{{
-  in_series_string VARCHAR(32)
+  in_series_string VARCHAR(64)
 )
 RETURNS TABLE (
   series_id INTEGER
@@ -129,12 +129,12 @@ $FUNC$ LANGUAGE plpgsql SECURITY DEFINER VOLATILE;
  ******
  */
 CREATE OR REPLACE FUNCTION getSeries ( --{{{
-  in_series_string VARCHAR(32)
+  in_series_string VARCHAR(64)
 )
 RETURNS TABLE (
   series_id INTEGER,
   item_id INTEGER,
-  item_string VARCHAR(32),
+  item_string VARCHAR(64),
   item_number INTEGER,
   data_type VARCHAR(8),
   is_multiple BOOLEAN
@@ -169,7 +169,7 @@ $FUNC$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
  */
 CREATE OR REPLACE FUNCTION addSeriesItem ( --{{{
   in_series_id INTEGER,
-  in_item_string VARCHAR(32),
+  in_item_string VARCHAR(128),
   in_item_number INTEGER,
   in_data_type VARCHAR(8),
   in_is_multiple BOOLEAN
@@ -203,7 +203,7 @@ $FUNC$ LANGUAGE plpgsql SECURITY DEFINER VOLATILE;
  ******
  */
 CREATE OR REPLACE FUNCTION getSeriesItem ( --{{{
-  in_series_string VARCHAR(32),
+  in_series_string VARCHAR(128),
   in_item_number INTEGER
 )
 RETURNS TABLE (
@@ -237,7 +237,7 @@ $FUNC$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
  ******
  */
 CREATE OR REPLACE FUNCTION addQuestion ( --{{{
-  in_question_string VARCHAR(32),
+  in_question_string VARCHAR(64),
   in_item_id INTEGER,
   in_type VARCHAR(8),
   in_is_multiple BOOLEAN
@@ -269,7 +269,7 @@ $FUNC$ LANGUAGE plpgsql SECURITY DEFINER VOLATILE;
  ******
  */
 CREATE OR REPLACE FUNCTION getQuestion ( --{{{
-  in_question_string VARCHAR(32)
+  in_question_string VARCHAR(64)
 )
 RETURNS TABLE (
   question_id INTEGER,

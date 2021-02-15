@@ -15,29 +15,34 @@ namespace PERUCOVID;
  * None
  ******
  */
-function ingest(\stdClass $response) { //{{{
+function ingest(\stdClass $response) : array { //{{{
     // delimiters for multi-answer fields
     $delims = ['|', ','];
+    
+    // array to hold errors
+    $errors = [];
     
     // need community identifier and week
     if (!isset($response->community) ||
         !isset($response->weekStart)) {
-        throw new \Exception('MissingCommunityOrWeek');
+        $errors[] = ['MissingCommunityOrWeek'];
     }
     
     // connect to DB - need to commit on success
     $db = new DB();
     
     // get community ID
+    $communityID = NULL;
     if (!($cResp = $db->getCommunity($response->community))) {
-        throw new \Exception(sprintf('UnrecognisedComunity|%s',
-                                     $response->community));
+        $errors[] = ['UnrecognisedCommunity', $response->community];
+    }
+    else {
+        $communityID = $cResp[0]->community_id;
     }
     
     // get week ID
     if (!($wResp = $db->getWeek($response->weekStart))) {
-        throw new \Exception(sprintf('UnrecognisedDate|%s',
-                                     $response->community));
+        $errors[] = ['UnrecognisedDate', $response->community];
     }
     
     // create new response
@@ -58,9 +63,10 @@ function ingest(\stdClass $response) { //{{{
 
         // make sure number of answers matches number of items in series
         if (count($answers) != count($qResp)) {
-            throw new \Exception(sprintf('ItemCountMismatch|%s|%s',
-                                         $response->community,
-                                         $field));
+            $errors[] = ['ItemCountMismatch',
+                         $response->community,
+                         $field];
+            continue;
         }
         
         foreach ($answers as $i => $answer) {
@@ -107,9 +113,9 @@ function ingest(\stdClass $response) { //{{{
                                        $n, $a);
             
                 if (!$resp || !$resp[0]->updated) {
-                    throw new \Exception(sprintf('ProblemAddingAnswer|%s|%s|%s',
-                                                 $response->community,
-                                                 $field, $a));
+                    $errors[] = ['ProblemAddingAnswer',
+                                 $response->community,
+                                 $field, $a];
                 }
             }
         }
@@ -117,6 +123,8 @@ function ingest(\stdClass $response) { //{{{
     
     // got here, so commit on success
     $db->commit();
+    
+    return $errors;
 }
 //}}}
 

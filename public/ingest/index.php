@@ -38,18 +38,16 @@ try {
     }
     
     // ingest response
-    try {
-        ingest($response);
+    $errors = ingest($response);
+    
+    if (!$errors) {
         $message = 'success';
     }
-    catch (\Throwable $e) {
-        // split error message on |
-        $strings = explode('|', $e->getMessage());
-        
+    else {
         // email error
-        email($strings);
+        email($errors);
         
-        throw new \Exception($strings[0]);
+        throw new \Exception($errors[0][0]);
     }
 }
 catch (\Throwable $e) {

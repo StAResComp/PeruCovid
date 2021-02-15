@@ -16,7 +16,7 @@ CREATE TABLE weeks (
 DROP TABLE IF EXISTS series CASCADE;
 CREATE TABLE series (
   series_id SERIAL PRIMARY KEY,
-  series_string VARCHAR(32)
+  series_string VARCHAR(64)
 );
 
 -- individual items in series, e.g. ages 18-24
@@ -24,7 +24,7 @@ DROP TABLE IF EXISTS series_items CASCADE;
 CREATE TABLE series_items (
   item_id SERIAL PRIMARY KEY,
   series_id INTEGER,
-  item_string VARCHAR(32),
+  item_string VARCHAR(128),
   item_number INTEGER,
   data_type VARCHAR(8),
   is_multiple BOOLEAN DEFAULT 'false',
@@ -36,7 +36,7 @@ DROP TABLE IF EXISTS questions CASCADE;
 CREATE TABLE questions (
   question_id SERIAL PRIMARY KEY,
   item_id INTEGER DEFAULT NULL,
-  question_string VARCHAR(32),
+  question_string VARCHAR(64),
   data_type VARCHAR(8),
 --  is_structure BOOLEAN DEFAULT 'false',
   is_multiple BOOLEAN DEFAULT 'false',

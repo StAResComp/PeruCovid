@@ -10,21 +10,26 @@ namespace PERUCOVID;
  * SYNOPSIS
  * Send error to predefined recipients
  * ARGUMENTS
- * message - string - error message to send
+ * errors - array - array of error messages
  * RETURN VALUE
  * None
  ******
  */
-function email(array $strings) { //{{{
+function email(array $errors) { //{{{
     // read strings from ini file
     $ini = parse_ini_file(INI_FILE);
+    $nl = "\r\n";
     
     // format message
-    $messageKey = array_shift($strings);
-    $message = vsprintf($ini['strings'][$messageKey], $strings);
+    $message = '';
+    
+    foreach ($errors as $error) {
+        $messageKey = array_shift($error);
+        $message .= vsprintf($ini['strings'][$messageKey], $error) . $nl;
+    }
     
     return mail(implode(', ', $ini['recipients']),
                 $ini['subject'],
-                wordwrap($message, 70, "\r\n"));
+                wordwrap($message, 70, $nl));
 }
 //}}}

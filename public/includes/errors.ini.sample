@@ -9,8 +9,8 @@ recipients[] = 'me@example.com'
 subject = 'Survey error'
 
 [error_strings]
-strings[MissingIdentifierAndWeek] = 'Identifier or date are missing'
-strings[UnrecognisedMonitora] = 'Monitora identifier (%1$s) is not recognised'
-strings[UnrecognisedDate] = 'Date not formatted correctly (monitora %1$s)'
-strings[ItemCountMismatch] = 'Number of answers (in %2$s) does not match number of questions (monitora %1$s)'
-strings[ProblemAddingAnswer] = 'Unable to add answer %3$s to question %2$s (monitora %1$s)'
+strings[MissingIdentifierAndWeek] = 'Community or date are missing'
+strings[UnrecognisedCommunity] = 'Community (%1$s) is not recognised'
+strings[UnrecognisedDate] = 'Date not formatted correctly (community %1$s)'
+strings[ItemCountMismatch] = 'Number of answers (in %2$s) does not match number of questions (community %1$s)'
+strings[ProblemAddingAnswer] = 'Unable to add answer %3$s to question %2$s (community %1$s)'
