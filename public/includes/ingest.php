@@ -68,6 +68,8 @@ function ingest(\stdClass $response) : array { //{{{
                          $field];
             continue;
         }
+
+        $repeatingID = NULL;
         
         foreach ($answers as $i => $answer) {
             // trim strings
@@ -95,6 +97,12 @@ function ingest(\stdClass $response) : array { //{{{
             else {
                 $answer = [$answer];
             }
+
+            // is answer repeating
+            if (NULL == $repeatingID && $qResp[0]->is_repeating) {
+                $rResp = $db->addRepeating();
+                $repeatingID = $rResp[0]->repeating_id;
+            }
             
             foreach ($answer as $a) {
                 // trim answer
@@ -104,17 +112,15 @@ function ingest(\stdClass $response) : array { //{{{
                 }
                 
                 // get numeric value if needed
-                $n = ('numeric' == $qResp[$i]->data_type) 
-                  && ((string) floatval($a) == $a) ? floatval($a) : NULL;
+                $n = ((string) floatval($a) == $a) ? floatval($a) : NULL;
                 
                 $resp = $db->addAnswer($responseID, 
                                        $qResp[$i]->question_id, 
-                                       $structureID,
+                                       $structureID, $repeatingID,
                                        $n, $a);
             
                 if (!$resp || !$resp[0]->updated) {
-                    $errors[] = ['ProblemAddingAnswer',
-                                 $response->community,
+                    $errors[] = ['ProblemAddingAnswer', $response->community,
                                  $field, $a];
                 }
             }

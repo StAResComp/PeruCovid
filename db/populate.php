@@ -13,9 +13,8 @@ $fields = json_decode(file_get_contents('php://stdin'));
 $db = new DB();
 
 foreach ($fields as $field => $params) {
-    switch ($params->type) {
-        // series information
-     case 'series':
+    // series information
+    if (isset($params->items)) {
         // add series
         $resp = $db->addSeries($field);
         $seriesID = $resp[0]->series_id;
@@ -27,36 +26,26 @@ foreach ($fields as $field => $params) {
         // add items in series
         foreach ($params->items as $i => $item) {
             $db->addSeriesItem($seriesID, trim($item), $i + 1, 
-                               $params->data[$i], $multiple[$i]);
+                               $multiple[$i]);
         }
-        
-        break;
-        
-        // question information
-     case 'question':
-        // override field name for question
-        if (isset($params->question)) {
-            $field = $params->question;
-        }
+    }
+    // question information
+    else {
+        // question is repeating
+        $repeating = isset($params->repeating) ? 'true' : 'false';
         
         // question uses a series
         if (isset($params->series)) {
             $seriesItems = $db->getSeries($params->series);
             foreach ($seriesItems as $item) {
-                $db->addQuestion($field, $item->item_id, 
-                                 $item->data_type, 
+                $db->addQuestion($field, $item->item_id, $repeating,
                                  $item->is_multiple ? 'true' : 'false');
             }
         }
         // single question
         else {
-            $db->addQuestion($field, NULL, $params->data, 'false');
+            $db->addQuestion($field, NULL, $repeating, 'false');
         }
-        
-        break;
-        
-     default:
-        break;
     }
 }
 

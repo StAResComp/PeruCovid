@@ -26,7 +26,6 @@ CREATE TABLE series_items (
   series_id INTEGER,
   item_string VARCHAR(128),
   item_number INTEGER,
-  data_type VARCHAR(8),
   is_multiple BOOLEAN DEFAULT 'false',
   FOREIGN KEY (series_id) REFERENCES series (series_id) ON DELETE CASCADE ON UPDATE CASCADE
 );
@@ -37,8 +36,7 @@ CREATE TABLE questions (
   question_id SERIAL PRIMARY KEY,
   item_id INTEGER DEFAULT NULL,
   question_string VARCHAR(64),
-  data_type VARCHAR(8),
---  is_structure BOOLEAN DEFAULT 'false',
+  is_repeating BOOLEAN DEFAULT 'false',
   is_multiple BOOLEAN DEFAULT 'false',
   FOREIGN KEY (item_id) REFERENCES series_items (item_id) ON DELETE CASCADE ON UPDATE CASCADE
 );
@@ -60,16 +58,25 @@ CREATE TABLE structures (
   structure_id SERIAL PRIMARY KEY
 );
 
+-- repeatable questions - use ID to link parts of repeatable question
+DROP TABLE IF EXISTS repeating CASCADE;
+CREATE TABLE repeating (
+  repeating_id SERIAL PRIMARY KEY
+);
+
 -- answer to individual question in response to survey
 DROP TABLE IF EXISTS answers CASCADE;
 CREATE TABLE answers (
   response_id INTEGER,
   question_id INTEGER,
   structure_id INTEGER DEFAULT NULL,
+  repeating_id INTEGER DEFAULT NULL,
   numeric_value NUMERIC,
   string_value TEXT,
   FOREIGN KEY (response_id) REFERENCES responses (response_id) ON DELETE CASCADE ON UPDATE CASCADE,
-  FOREIGN KEY (question_id) REFERENCES questions (question_id) ON DELETE CASCADE ON UPDATE CASCADE
+  FOREIGN KEY (question_id) REFERENCES questions (question_id) ON DELETE CASCADE ON UPDATE CASCADE,
+  FOREIGN KEY (structure_id) REFERENCES structures (structure_id) ON DELETE CASCADE ON UPDATE CASCADE,
+  FOREIGN KEY (repeating_id) REFERENCES repeating (repeating_id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- add communities
