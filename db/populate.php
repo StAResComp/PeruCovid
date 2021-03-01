@@ -19,32 +19,39 @@ foreach ($fields as $field => $params) {
         $resp = $db->addSeries($field);
         $seriesID = $resp[0]->series_id;
         
-        // some questions in series might be multiple
-        $multiple = isset($params->multiple) ? $params->multiple 
-          : array_fill(0, count($params->items), 'false');
-        
         // add items in series
         foreach ($params->items as $i => $item) {
-            $db->addSeriesItem($seriesID, trim($item), $i + 1, 
-                               $multiple[$i]);
+            $db->addSeriesItem($seriesID, trim($item), $i + 1);
         }
     }
     // question information
     else {
+        // get ID of meta question
+        if (!($mResp = $db->addMetaQuestion())) {
+            printf("error adding meta question\n");
+        }
+        $metaQuestionID = $mResp[0]->meta_question_id;
+        
         // question is repeating
-        $repeating = isset($params->repeating) ? 'true' : 'false';
+        $repeats = isset($params->repeats) ? $params->repeats : 1;
         
         // question uses a series
         if (isset($params->series)) {
             $seriesItems = $db->getSeries($params->series);
             foreach ($seriesItems as $item) {
-                $db->addQuestion($field, $item->item_id, $repeating,
-                                 $item->is_multiple ? 'true' : 'false');
+                if (!$db->addQuestion($metaQuestionID, 
+                                      $field, $item->item_id, $repeats)) {
+                    printf("error: %s, %d\n", $field, $item->item_id);
+                    print_r($db->getError());
+                }
             }
         }
         // single question
         else {
-            $db->addQuestion($field, NULL, $repeating, 'false');
+            if (!$db->addQuestion($metaQuestionID, $field, NULL, $repeats)) {
+                printf("error: %s\n", $field);
+                print_r($db->getError());
+            }
         }
     }
 }

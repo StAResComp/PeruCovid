@@ -26,19 +26,25 @@ CREATE TABLE series_items (
   series_id INTEGER,
   item_string VARCHAR(128),
   item_number INTEGER,
-  is_multiple BOOLEAN DEFAULT 'false',
   FOREIGN KEY (series_id) REFERENCES series (series_id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- ID to group question together
+DROP TABLE IF EXISTS meta_questions CASCADE;
+CREATE TABLE meta_questions (
+  meta_question_id SERIAL PRIMARY KEY
 );
 
 -- individual question
 DROP TABLE IF EXISTS questions CASCADE;
 CREATE TABLE questions (
   question_id SERIAL PRIMARY KEY,
+  meta_question_id INTEGER,
   item_id INTEGER DEFAULT NULL,
   question_string VARCHAR(64),
-  is_repeating BOOLEAN DEFAULT 'false',
-  is_multiple BOOLEAN DEFAULT 'false',
-  FOREIGN KEY (item_id) REFERENCES series_items (item_id) ON DELETE CASCADE ON UPDATE CASCADE
+  repeats INTEGER DEFAULT 1,
+  FOREIGN KEY (item_id) REFERENCES series_items (item_id) ON DELETE CASCADE ON UPDATE CASCADE,
+  FOREIGN KEY (meta_question_id) REFERENCES meta_questions (meta_question_id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- response to survey
@@ -52,31 +58,16 @@ CREATE TABLE responses (
   FOREIGN KEY (week_id) REFERENCES weeks (week_id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
--- structure to link multi-part questions (e.g. landing data)
-DROP TABLE IF EXISTS structures CASCADE;
-CREATE TABLE structures (
-  structure_id SERIAL PRIMARY KEY
-);
-
--- repeatable questions - use ID to link parts of repeatable question
-DROP TABLE IF EXISTS repeating CASCADE;
-CREATE TABLE repeating (
-  repeating_id SERIAL PRIMARY KEY
-);
-
 -- answer to individual question in response to survey
 DROP TABLE IF EXISTS answers CASCADE;
 CREATE TABLE answers (
   response_id INTEGER,
   question_id INTEGER,
-  structure_id INTEGER DEFAULT NULL,
-  repeating_id INTEGER DEFAULT NULL,
+  repeat INTEGER,
   numeric_value NUMERIC,
   string_value TEXT,
   FOREIGN KEY (response_id) REFERENCES responses (response_id) ON DELETE CASCADE ON UPDATE CASCADE,
-  FOREIGN KEY (question_id) REFERENCES questions (question_id) ON DELETE CASCADE ON UPDATE CASCADE,
-  FOREIGN KEY (structure_id) REFERENCES structures (structure_id) ON DELETE CASCADE ON UPDATE CASCADE,
-  FOREIGN KEY (repeating_id) REFERENCES repeating (repeating_id) ON DELETE CASCADE ON UPDATE CASCADE
+  FOREIGN KEY (question_id) REFERENCES questions (question_id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- add communities

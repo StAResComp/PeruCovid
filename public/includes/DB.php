@@ -21,6 +21,7 @@ class DB {
     private $pdo = null;
     private $errorMessage = "";
     private $errorCode = 0;
+    private $fetch = \PDO::FETCH_OBJ;
 
     public static $instance = null;
 
@@ -39,6 +40,20 @@ class DB {
         
         // start transaction, which will need to be committed
         $this->pdo->beginTransaction();
+    }
+    //}}}
+    
+    /****** DB.php/setFetch
+     * NAME
+     * setFetch
+     * SYNOPSIS
+     * Set the fetch method for the database queries
+     * ARGUMENTS
+     *   * fetch - integer - fetch constant
+     ******
+     */
+    public function setFetch(int $fetch) { //{{{
+        $this->fetch = $fetch;
     }
     //}}}
 
@@ -66,7 +81,7 @@ class DB {
 
 						// prepare statement
 						$stmt = $this->pdo->prepare($sql);
-            $stmt->setFetchMode(\PDO::FETCH_OBJ);
+            $stmt->setFetchMode($this->fetch);
 
 						// bind procedure parameters
 						foreach ($args as $i => $value) {
@@ -77,6 +92,17 @@ class DB {
 						$stmt->execute();
 
             $results = $stmt->fetchAll();
+            
+            // add columns if fetching numbered array
+            if (is_array($results) && \PDO::FETCH_NUM == $this->fetch) {
+                $cols = [];
+                for ($i = 0, $l = $stmt->columnCount(); $i < $l; ++ $i) {
+                    $meta = $stmt->getColumnMeta($i);
+                    $cols[] = $meta['name'];
+                }
+                
+                array_unshift($results, $cols);
+            }
 				}
 				catch (\PDOException $e) {
 						$this->errorMessage = $e->getMessage();

@@ -7,6 +7,7 @@ namespace PERUCOVID;
 require_once '../includes/globals.php';
 require_once '../includes/ingest.php';
 require_once '../includes/email.php';
+require_once '../includes/export.php';
 
 $message = 'UnknownError';
 
@@ -38,16 +39,27 @@ try {
     }
     
     // ingest response
-    $errors = ingest($response);
+    $responseID = 0;
+    $community = '';
+    $respDate = '';
+      
+    $csv = [];
+    $errors = ingest($response, $responseID, $community, $respDate);
+    
+    if (0 != $responseID) {
+        $csv = export($responseID);
+    }
+    else {
+        $errors[] = ['NoCSV'];
+    }
+    
+    email($errors, $csv, $community, $respDate);
     
     if (!$errors) {
         $message = 'success';
     }
     else {
-        // email error
-        email($errors);
-        
-        throw new \Exception($errors[0][0]);
+        throw new \Exception(implode(' ', $errors[0]));
     }
 }
 catch (\Throwable $e) {

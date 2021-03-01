@@ -1,23 +1,3 @@
-/****f* functions.sql/
- * NAME
- * 
- * SYNOPSIS
- * 
- * ARGUMENTS
- * RETURN VALUE
- ******
- */
-/*CREATE OR REPLACE FUNCTION  ( --{{{
-)
-RETURNS TABLE (
-)
-AS $FUNC$
-BEGIN
-END;
-$FUNC$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
---}}}
-*/
-
 /****f* functions.sql/getCommunity
  * NAME
  * getCommunity
@@ -125,7 +105,7 @@ $FUNC$ LANGUAGE plpgsql SECURITY DEFINER VOLATILE;
  * ARGUMENTS
  *   * series_string - string - string identifier for series
  * RETURN VALUE
- * Table of series_id, item_id, item_string, item_number, is_multiple boolean
+ * Table of series_id, item_id, item_string, item_number
  ******
  */
 CREATE OR REPLACE FUNCTION getSeries ( --{{{
@@ -135,14 +115,13 @@ RETURNS TABLE (
   series_id INTEGER,
   item_id INTEGER,
   item_string VARCHAR(64),
-  item_number INTEGER,
-  is_multiple BOOLEAN
+  item_number INTEGER
 )
 AS $FUNC$
 BEGIN
   RETURN QUERY
     SELECT s.series_id, 
-           i.item_id, i.item_string, i.item_number, i.is_multiple
+           i.item_id, i.item_string, i.item_number
       FROM series AS s
 INNER JOIN series_items AS i USING (series_id)
      WHERE series_string = in_series_string
@@ -160,7 +139,6 @@ $FUNC$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
  *   * series_id - INTEGER - ID of series
  *   * item_string - STRING - name of item
  *   * item_number - INTEGER - number in series
- *   * is_multiple - BOOLEAN - can question have multiple answers
  * RETURN VALUE
  * INTEGER - item ID
  ******
@@ -168,8 +146,7 @@ $FUNC$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
 CREATE OR REPLACE FUNCTION addSeriesItem ( --{{{
   in_series_id INTEGER,
   in_item_string VARCHAR(128),
-  in_item_number INTEGER,
-  in_is_multiple BOOLEAN
+  in_item_number INTEGER
 )
 RETURNS TABLE (
   item_id INTEGER
@@ -179,8 +156,8 @@ BEGIN
   RETURN QUERY
     INSERT
       INTO series_items AS i
-           (series_id, item_string, item_number, is_multiple)
-    VALUES (in_series_id, in_item_string, in_item_number, in_is_multiple)
+           (series_id, item_string, item_number)
+    VALUES (in_series_id, in_item_string, in_item_number)
  RETURNING i.item_id;
 END;
 $FUNC$ LANGUAGE plpgsql SECURITY DEFINER VOLATILE;
@@ -195,7 +172,7 @@ $FUNC$ LANGUAGE plpgsql SECURITY DEFINER VOLATILE;
  *   * question_string - string - name of question
  *   * item_number - INTEGER - number of item
  * RETURN VALUE
- * item_id INTEGER, is_multiple BOOLEAN
+ * item_id INTEGER
  ******
  */
 CREATE OR REPLACE FUNCTION getSeriesItem ( --{{{
@@ -203,13 +180,12 @@ CREATE OR REPLACE FUNCTION getSeriesItem ( --{{{
   in_item_number INTEGER
 )
 RETURNS TABLE (
-  item_id INTEGER,
-  is_multiple BOOLEAN
+  item_id INTEGER
 )
 AS $FUNC$
 BEGIN
   RETURN QUERY
-    SELECT i.item_id, i.is_multiple
+    SELECT i.item_id
       FROM series_items AS i
 INNER JOIN series AS s USING (series_id)
      WHERE s.series_string = in_series_string
@@ -217,6 +193,32 @@ INNER JOIN series AS s USING (series_id)
 END;
 $FUNC$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
 --}}}
+
+/****f* functions.sql/addMetaQuestion
+ * NAME
+ * addMetaQuestion
+ * SYNOPSIS
+ * Add a meta question record for grouping several questions
+ * RETURN VALUE
+ * INTEGER - meta question ID
+ ******
+ */
+CREATE OR REPLACE FUNCTION addMetaQuestion () --{{{
+RETURNS TABLE (
+  meta_question_id INTEGER
+)
+AS $FUNC$
+BEGIN
+  RETURN QUERY
+    INSERT 
+      INTO meta_questions AS m
+           (meta_question_id)
+    VALUES (DEFAULT)
+ RETURNING m.meta_question_id;
+END;
+$FUNC$ LANGUAGE plpgsql SECURITY DEFINER VOLATILE;
+--}}}
+
 
 /****f* functions.sql/addQuestion
  * NAME
@@ -226,17 +228,16 @@ $FUNC$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
  * ARGUMENTS
  *   * question_string - string - name of question
  *   * item_id - INTEGER - possible ID of item
- *   * is_repeating - BOOLEAN - is repeating question
- *   * is_multiple - BOOLEAN - is question with multiple answers
+ *   * repeats - INTEGER - number of times question is repeated
  * RETURN VALUE
  * INTEGER - question ID
  ******
  */
 CREATE OR REPLACE FUNCTION addQuestion ( --{{{
+  in_meta_question_id INTEGER,
   in_question_string VARCHAR(64),
   in_item_id INTEGER,
-  in_is_repeating BOOLEAN,
-  in_is_multiple BOOLEAN
+  in_repeats INTEGER
 )
 RETURNS TABLE (
   question_id INTEGER
@@ -246,8 +247,8 @@ BEGIN
   RETURN QUERY
     INSERT 
       INTO questions AS q
-           (item_id, question_string, is_repeating, is_multiple)
-    VALUES (in_item_id, in_question_string, in_is_repeating, in_is_multiple)
+           (meta_question_id, item_id, question_string, repeats)
+    VALUES (in_meta_question_id, in_item_id, in_question_string, in_repeats)
  RETURNING q.question_id;
 END;
 $FUNC$ LANGUAGE plpgsql SECURITY DEFINER VOLATILE;
@@ -261,7 +262,7 @@ $FUNC$ LANGUAGE plpgsql SECURITY DEFINER VOLATILE;
  * ARGUMENTS
  *   * question_string - string - name of question
  * RETURN VALUE
- * Table of question_id, item_id INTEGERS, is_repeating, is_multiple BOOLEANS
+ * Table of question_id, item_id INTEGERS, repeats
  ******
  */
 CREATE OR REPLACE FUNCTION getQuestion ( --{{{
@@ -269,14 +270,14 @@ CREATE OR REPLACE FUNCTION getQuestion ( --{{{
 )
 RETURNS TABLE (
   question_id INTEGER,
+  question_string VARCHAR(64),
   item_id INTEGER,
-  is_repeating BOOLEAN,
-  is_multiple BOOLEAN
+  repeats INTEGER
 )
 AS $FUNC$
 BEGIN
   RETURN QUERY
-    SELECT q.question_id, q.item_id, q.is_repeating, q.is_multiple
+    SELECT q.question_id, q.question_string, q.item_id, q.repeats
       FROM questions AS q
      WHERE q.question_string = in_question_string
         OR in_question_string SIMILAR TO CONCAT(q.question_string, '[0-9]%');
@@ -315,56 +316,6 @@ END;
 $FUNC$ LANGUAGE plpgsql SECURITY DEFINER VOLATILE;
 --}}}
 
-/****f* functions.sql/addStructure
- * NAME
- * addStructure
- * SYNOPSIS
- * Create a new structure ID
- * RETURN VALUE
- * INTEGER - structure_id
- ******
- */
-CREATE OR REPLACE FUNCTION addStructure () --{{{
-RETURNS TABLE (
-  structure_id INTEGER
-)
-AS $FUNC$
-BEGIN
-  RETURN QUERY
-    INSERT
-      INTO structures AS s
-           (structure_id)
-    VALUES (DEFAULT)
- RETURNING s.structure_id;
-END;
-$FUNC$ LANGUAGE plpgsql SECURITY DEFINER VOLATILE;
---}}}
-
-/****f* functions.sql/addRepeating
- * NAME
- * addRepeating
- * SYNOPSIS
- * Create a new repeating ID
- * RETURN VALUE
- * INTEGER - repeating_id
- ******
- */
-CREATE OR REPLACE FUNCTION addRepeating () --{{{
-RETURNS TABLE (
-  repeating_id INTEGER
-)
-AS $FUNC$
-BEGIN
-  RETURN QUERY
-    INSERT
-      INTO repeating AS r
-           (repeating_id)
-    VALUES (DEFAULT)
- RETURNING r.repeating_id;
-END;
-$FUNC$ LANGUAGE plpgsql SECURITY DEFINER VOLATILE;
---}}}
-
 /****f* functions.sql/addAnswer
  * NAME
  * addAnswer
@@ -373,8 +324,7 @@ $FUNC$ LANGUAGE plpgsql SECURITY DEFINER VOLATILE;
  * ARGUMENTS
  *   * in_response_id - INTEGER - ID of response
  *   * in_question_id - INTEGER - ID of question
- *   * in_structutre_id - INTEGER - ID of structure
- *   * in_repeating_id - INTEGER - ID of repeating question
+ *   * in_repeat - INTEGER - which repeat of the question is this
  *   * in_answer_numeric - NUMERIC - numeric answer to question
  *   * in_answer_string - string - string answer to question
  * RETURN VALUE
@@ -384,8 +334,7 @@ $FUNC$ LANGUAGE plpgsql SECURITY DEFINER VOLATILE;
 CREATE OR REPLACE FUNCTION addAnswer ( --{{{
   in_response_id INTEGER,
   in_question_id INTEGER,
-  in_structure_id INTEGER,
-  in_repeating_id INTEGER,
+  in_repeat INTEGER,
   in_answer_numeric NUMERIC,
   in_answer_string TEXT
 )
@@ -396,13 +345,57 @@ AS $FUNC$
 BEGIN
   INSERT
     INTO answers
-         (response_id, question_id, structure_id, repeating_id, 
-          numeric_value, string_value)
-  VALUES (in_response_id, in_question_id, in_structure_id, in_repeating_id, 
+         (response_id, question_id, repeat, numeric_value, string_value)
+  VALUES (in_response_id, in_question_id, in_repeat, 
           in_answer_numeric, in_answer_string);
   
   RETURN QUERY
     SELECT FOUND;
+END;
+$FUNC$ LANGUAGE plpgsql SECURITY DEFINER VOLATILE;
+--}}}
+
+/****f* functions.sql/export
+ * NAME
+ * export
+ * SYNOPSIS
+ * Export a response
+ * ARGUMENTS
+ *   * in_response_id - INTEGER - ID of response
+ * RETURN VALUE
+ * Table with question details and answers from response
+ ******
+ */
+CREATE OR REPLACE FUNCTION export ( --{{{
+  in_response_id INTEGER
+)
+RETURNS TABLE (
+  question_id INTEGER,
+  question_string VARCHAR(64),
+  series_string VARCHAR(64),
+  item_string VARCHAR(128),
+  repeat INTEGER,
+  numeric_value NUMERIC,
+  string_value TEXT
+)
+AS $FUNC$
+BEGIN
+  RETURN QUERY
+    SELECT q.question_id, q.question_string,
+           s.series_string, si.item_string,
+           q.repeat_number,
+           a.numeric_value, a.string_value
+      FROM (SELECT qi.question_id, qi.question_string, qi.item_id, qi.meta_question_id,
+                   repeat_number
+              FROM questions AS qi, GENERATE_SERIES(1, repeats) AS repeat_number) AS q
+ LEFT JOIN series_items AS si USING (item_id)
+ LEFT JOIN series AS s USING (series_id)
+ LEFT JOIN answers AS a 
+        ON a.question_id = q.question_id 
+       AND a.repeat = repeat_number 
+       AND a.response_id = in_response_id
+  ORDER BY q.meta_question_id, q.repeat_number, si.item_number
+;
 END;
 $FUNC$ LANGUAGE plpgsql SECURITY DEFINER VOLATILE;
 --}}}

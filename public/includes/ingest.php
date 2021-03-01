@@ -10,12 +10,15 @@ namespace PERUCOVID;
  * SYNOPSIS
  * Add response to database
  * ARGUMENTS
- * response - stdClass - JSON data as PHP object
+ *   * response - stdClass - JSON data as PHP object
+ *   * responseID - integer - passed by reference
+ *   * community - string - passed by reference
+ *   * respDate - string - passed by reference
  * RETURN VALUE
  * None
  ******
  */
-function ingest(\stdClass $response) : array { //{{{
+function ingest(\stdClass $response, int &$responseID, string &$community, string &$respDate) : array { //{{{
     // delimiters for multi-answer fields
     $delims = ['|', ','];
     
@@ -31,18 +34,20 @@ function ingest(\stdClass $response) : array { //{{{
     // connect to DB - need to commit on success
     $db = new DB();
     
+    $community = $response->community;
+    $respDate = $response->weekStart;
+    
     // get community ID
-    $communityID = NULL;
     if (!($cResp = $db->getCommunity($response->community))) {
-        $errors[] = ['UnrecognisedCommunity', $response->community];
-    }
-    else {
-        $communityID = $cResp[0]->community_id;
+        //$errors[] = ['UnrecognisedCommunity', $response->community];
+        $errors[] = ['UnrecognisedCommunity', print_r($db->getError(), true)];
     }
     
     // get week ID
     if (!($wResp = $db->getWeek($response->weekStart))) {
-        $errors[] = ['UnrecognisedDate', $response->community];
+        $errors[] = ['UnrecognisedDate', 
+                     $response->community, 
+                     $response->weekStart];
     }
     
     // create new response
@@ -50,10 +55,15 @@ function ingest(\stdClass $response) : array { //{{{
                              $wResp[0]->week_id);
     $responseID = $resp[0]->response_id;
     
+    // array to remember how many repeats an answer has had
+    $repeats = [];
+    
     // loop over fields in response
     foreach ($response as $field => $value) {
         // get information about question if value not empty
-        if (!$value || !($qResp = $db->getQuestion($field))) {
+        if (!$value || 
+            '' == str_replace(array_merge($delims, [' ']), '', $value) ||
+            !($qResp = $db->getQuestion($field))) {
             continue;
         }
         
@@ -68,61 +78,41 @@ function ingest(\stdClass $response) : array { //{{{
                          $field];
             continue;
         }
-
-        $repeatingID = NULL;
+        
+        $qName = $qResp[0]->question_string;
+        if (!isset($repeats[$qName])) {
+            $repeats[$qName] = 0;
+        }
+        
+        ++ $repeats[$qName];
         
         foreach ($answers as $i => $answer) {
-            // trim strings
+            // trim string
             $answer = is_string($answer) ? trim($answer) : $answer;
+            
             // check for empty answer
-            if ('' == $answer) {
+            if ('' === $answer) {
                 continue;
             }
             
-            $structureID = NULL;
-            
-            // is answer a multiple one?
-            if ($qResp[$i]->is_multiple) {
-                // all multiple answers empty
-                if ('' == str_replace($delims[1], '', $answer)) {
-                    continue;
-                }
-                
-                $answer = explode($delims[1], $answer);
-            
-                // get structure ID for multiple answers
-                $sResp = $db->addStructure();
-                $structureID = $sResp[0]->structure_id;
-            }
-            else {
-                $answer = [$answer];
-            }
-
-            // is answer repeating
-            if (NULL == $repeatingID && $qResp[0]->is_repeating) {
-                $rResp = $db->addRepeating();
-                $repeatingID = $rResp[0]->repeating_id;
+            // trim answer
+            $answer = is_string($answer) ? trim($answer) : $answer;
+            if ('' === $answer) {
+                continue;
             }
             
-            foreach ($answer as $a) {
-                // trim answer
-                $a = is_string($a) ? trim($a) : $a;
-                if ('' == $a) {
-                    continue;
-                }
-                
-                // get numeric value if needed
-                $n = ((string) floatval($a) == $a) ? floatval($a) : NULL;
-                
-                $resp = $db->addAnswer($responseID, 
-                                       $qResp[$i]->question_id, 
-                                       $structureID, $repeatingID,
-                                       $n, $a);
+            // get numeric value if possible
+            $n = ((string) floatval($answer) == $answer) 
+              ? floatval($answer) : NULL;
             
-                if (!$resp || !$resp[0]->updated) {
-                    $errors[] = ['ProblemAddingAnswer', $response->community,
-                                 $field, $a];
-                }
+            $resp = $db->addAnswer($responseID, 
+                                   $qResp[$i]->question_id, 
+                                   $repeats[$qName],
+                                   $n, $answer);
+            
+            if (!$resp || !$resp[0]->updated) {
+                $errors[] = ['ProblemAddingAnswer', $response->community,
+                             $field, $answer];
             }
         }
     }
