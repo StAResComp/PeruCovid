@@ -235,6 +235,7 @@ $FUNC$ LANGUAGE plpgsql SECURITY DEFINER VOLATILE;
  */
 CREATE OR REPLACE FUNCTION addQuestion ( --{{{
   in_meta_question_id INTEGER,
+  in_order INTEGER,
   in_question_string VARCHAR(64),
   in_item_id INTEGER,
   in_repeats INTEGER
@@ -247,8 +248,8 @@ BEGIN
   RETURN QUERY
     INSERT 
       INTO questions AS q
-           (meta_question_id, item_id, question_string, repeats)
-    VALUES (in_meta_question_id, in_item_id, in_question_string, in_repeats)
+           (meta_question_id, order_num, item_id, question_string, repeats)
+    VALUES (in_meta_question_id, in_order, in_item_id, in_question_string, in_repeats)
  RETURNING q.question_id;
 END;
 $FUNC$ LANGUAGE plpgsql SECURITY DEFINER VOLATILE;
@@ -316,6 +317,36 @@ END;
 $FUNC$ LANGUAGE plpgsql SECURITY DEFINER VOLATILE;
 --}}}
 
+/****f* functions.sql/getResponse
+ * NAME
+ * getResponse
+ * SYNOPSIS
+ * Get ID of response given community and week
+ * ARGUMENTS
+ *   * community_id - INTEGER - identifier of community
+ *   * week_id - INTEGER - ID of date
+ * RETURN VALUE
+ * INTEGER - response_id
+ ******
+ */
+CREATE OR REPLACE FUNCTION getResponse ( --{{{
+  in_community_id INTEGER,
+  in_week_id INTEGER
+)
+RETURNS TABLE (
+  response_id INTEGER
+)
+AS $FUNC$
+BEGIN
+  RETURN QUERY
+    SELECT r.response_id
+      FROM responses AS r
+     WHERE community_id = in_community_id
+       AND week_id = in_week_id;
+END;
+$FUNC$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
+--}}}
+
 /****f* functions.sql/addAnswer
  * NAME
  * addAnswer
@@ -355,6 +386,46 @@ END;
 $FUNC$ LANGUAGE plpgsql SECURITY DEFINER VOLATILE;
 --}}}
 
+/****f* functions.sql/correctAnswer
+ * NAME
+ * correctAnswer
+ * SYNOPSIS
+ * Update an answer
+ * ARGUMENTS
+ *   * in_response_id - INTEGER - ID of response
+ *   * in_question_id - INTEGER - ID of question
+ *   * in_repeat - INTEGER - which repeat of the question is this
+ *   * in_answer_numeric - NUMERIC - numeric answer to question
+ *   * in_answer_string - string - string answer to question
+ * RETURN VALUE
+ * BOOLEAN - true when row updated
+ ******
+ */
+CREATE OR REPLACE FUNCTION correctAnswer ( --{{{
+  in_response_id INTEGER,
+  in_question_id INTEGER,
+  in_repeat INTEGER,
+  in_answer_numeric NUMERIC,
+  in_answer_string TEXT
+)
+RETURNS TABLE (
+  updated BOOLEAN
+)
+AS $FUNC$
+BEGIN
+  UPDATE answers
+     SET numeric_value = in_answer_numeric,
+         string_value = in_answer_string
+   WHERE response_id = in_response_id
+     AND question_id = in_question_id
+     AND repeat = in_repeat;
+  
+  RETURN QUERY
+    SELECT FOUND;
+END;
+$FUNC$ LANGUAGE plpgsql SECURITY DEFINER VOLATILE;
+--}}}
+
 /****f* functions.sql/export
  * NAME
  * export
@@ -385,8 +456,8 @@ BEGIN
            s.series_string, si.item_string,
            q.repeat_number,
            a.numeric_value, a.string_value
-      FROM (SELECT qi.question_id, qi.question_string, qi.item_id, qi.meta_question_id,
-                   repeat_number
+      FROM (SELECT qi.question_id, qi.order_num, qi.question_string, 
+                   qi.item_id, qi.meta_question_id, repeat_number
               FROM questions AS qi, GENERATE_SERIES(1, repeats) AS repeat_number) AS q
  LEFT JOIN series_items AS si USING (item_id)
  LEFT JOIN series AS s USING (series_id)
@@ -394,9 +465,9 @@ BEGIN
         ON a.question_id = q.question_id 
        AND a.repeat = repeat_number 
        AND a.response_id = in_response_id
-  ORDER BY q.meta_question_id, q.repeat_number, si.item_number
+  ORDER BY q.order_num, q.repeat_number, si.item_number
 ;
 END;
-$FUNC$ LANGUAGE plpgsql SECURITY DEFINER VOLATILE;
+$FUNC$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
 --}}}
 

@@ -40,6 +40,7 @@ DROP TABLE IF EXISTS questions CASCADE;
 CREATE TABLE questions (
   question_id SERIAL PRIMARY KEY,
   meta_question_id INTEGER,
+  order_num INTEGER,
   item_id INTEGER DEFAULT NULL,
   question_string VARCHAR(64),
   repeats INTEGER DEFAULT 1,
@@ -55,7 +56,8 @@ CREATE TABLE responses (
   week_id INTEGER,
   time_stamp TIMESTAMP DEFAULT NOW(),
   FOREIGN KEY (community_id) REFERENCES communities (community_id) ON DELETE CASCADE ON UPDATE CASCADE,
-  FOREIGN KEY (week_id) REFERENCES weeks (week_id) ON DELETE CASCADE ON UPDATE CASCADE
+  FOREIGN KEY (week_id) REFERENCES weeks (week_id) ON DELETE CASCADE ON UPDATE CASCADE,
+  UNIQUE (community_id, week_id)
 );
 
 -- answer to individual question in response to survey

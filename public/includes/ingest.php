@@ -11,14 +11,15 @@ namespace PERUCOVID;
  * Add response to database
  * ARGUMENTS
  *   * response - stdClass - JSON data as PHP object
+ *   * corrections - bool - true when correcting answers
  *   * responseID - integer - passed by reference
  *   * community - string - passed by reference
  *   * respDate - string - passed by reference
  * RETURN VALUE
- * None
+ * Array of errors
  ******
  */
-function ingest(\stdClass $response, int &$responseID, string &$community, string &$respDate) : array { //{{{
+function ingest(\stdClass $response, bool $corrections, int &$responseID, string &$community, string &$respDate) : array { //{{{
     // delimiters for multi-answer fields
     $delims = ['|', ','];
     
@@ -51,8 +52,17 @@ function ingest(\stdClass $response, int &$responseID, string &$community, strin
     }
     
     // create new response
-    $resp = $db->addResponse($cResp[0]->community_id,
-                             $wResp[0]->week_id);
+    $resp = NULL;
+    
+    if ($corrections) {
+        $resp = $db->getResponse($cResp[0]->community_id,
+                                 $wResp[0]->week_id);
+    }
+    else {
+        $resp = $db->addResponse($cResp[0]->community_id,
+                                 $wResp[0]->week_id);
+    }
+    
     $responseID = $resp[0]->response_id;
     
     // array to remember how many repeats an answer has had
@@ -105,10 +115,20 @@ function ingest(\stdClass $response, int &$responseID, string &$community, strin
             $n = ((string) floatval($answer) == $answer) 
               ? floatval($answer) : NULL;
             
-            $resp = $db->addAnswer($responseID, 
-                                   $qResp[$i]->question_id, 
-                                   $repeats[$qName],
-                                   $n, $answer);
+            $resp = NULL;
+            
+            if ($corrections) {
+                $resp = $db->correctAnswer($responseID, 
+                                           $qResp[$i]->question_id, 
+                                           $repeats[$qName],
+                                           $n, $answer);
+            }
+            else {
+                $resp = $db->addAnswer($responseID, 
+                                       $qResp[$i]->question_id, 
+                                       $repeats[$qName],
+                                       $n, $answer);
+            }
             
             if (!$resp || !$resp[0]->updated) {
                 $errors[] = ['ProblemAddingAnswer', $response->community,

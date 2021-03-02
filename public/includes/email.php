@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace PERUCOVID;
 
+require_once 'SimpleXLSXGen.php';
+
 /****f* email.php/email
  * NAME
  * email
@@ -14,6 +16,8 @@ namespace PERUCOVID;
  *   * csv - array - array to be turned into CSV string
  * RETURN VALUE
  * None
+ * NOTES
+ * https://stackoverflow.com/questions/12301358/send-attachments-with-php-mail
  ******
  */
 function email(array $errors, array $csv, string $community, string $respDate) { //{{{
@@ -33,19 +37,14 @@ function email(array $errors, array $csv, string $community, string $respDate) {
     }
     
     // serialise CSV array
-    $fh = fopen('php://memory', 'w');
-    foreach ($csv as $row) {
-        fputcsv($fh, $row);
-    }
-    
-    rewind($fh);
-    $attachment = stream_get_contents($fh);
-    fclose($fh);
-    $attachment = chunk_split(base64_encode($attachment));
+    $xlsx = \SimpleXLSXGen::fromArray($csv);
+
+    $attachment = chunk_split(base64_encode((string) $xlsx));
     file_put_contents('/tmp/test.csv', $attachment);
+
     
     // prepare filename
-    $filename = sprintf('%s_%s.csv', 
+    $filename = sprintf('%s_%s.xlsx', 
                         str_replace(' ', '', $community),
                         str_replace(' ', '', $respDate));
     
@@ -69,7 +68,7 @@ function email(array $errors, array $csv, string $community, string $respDate) {
     
     // attachment
     $body[] = sprintf('--%s', $sep);
-    $body[] = sprintf('Content-Type: text/csv; name="%s"',
+    $body[] = sprintf('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet; name="%s"',
                       $filename);
     $body[] = 'Content-Transfer-Encoding: base64';
     $body[] = 'Content-Disposition: attachment';

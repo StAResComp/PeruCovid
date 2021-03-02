@@ -35,11 +35,14 @@ foreach ($fields as $field => $params) {
         // question is repeating
         $repeats = isset($params->repeats) ? $params->repeats : 1;
         
+        // order of question
+        $order = $params->order;
+        
         // question uses a series
         if (isset($params->series)) {
             $seriesItems = $db->getSeries($params->series);
             foreach ($seriesItems as $item) {
-                if (!$db->addQuestion($metaQuestionID, 
+                if (!$db->addQuestion($metaQuestionID, $order,
                                       $field, $item->item_id, $repeats)) {
                     printf("error: %s, %d\n", $field, $item->item_id);
                     print_r($db->getError());
@@ -48,7 +51,8 @@ foreach ($fields as $field => $params) {
         }
         // single question
         else {
-            if (!$db->addQuestion($metaQuestionID, $field, NULL, $repeats)) {
+            if (!$db->addQuestion($metaQuestionID, $order, $field, NULL, 
+                                  $repeats)) {
                 printf("error: %s\n", $field);
                 print_r($db->getError());
             }

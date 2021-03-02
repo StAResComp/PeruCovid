@@ -23,6 +23,10 @@ try {
         throw new \Exception('ApiKeyMismatch');
     }
     
+    // check for corrections header
+    $corrections = isset($headers['corrections']) && 
+      'true' == $headers['corrections'];
+    
     // read JSON from INPUT
     if (!($json = file_get_contents('php://input'))) {
         throw new \Exception('NoData');
@@ -44,7 +48,9 @@ try {
     $respDate = '';
       
     $csv = [];
-    $errors = ingest($response, $responseID, $community, $respDate);
+    
+    $errors = ingest($response, $corrections, 
+                     $responseID, $community, $respDate);
     
     if (0 != $responseID) {
         $csv = export($responseID);
