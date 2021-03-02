@@ -69,7 +69,8 @@ CREATE TABLE answers (
   numeric_value NUMERIC,
   string_value TEXT,
   FOREIGN KEY (response_id) REFERENCES responses (response_id) ON DELETE CASCADE ON UPDATE CASCADE,
-  FOREIGN KEY (question_id) REFERENCES questions (question_id) ON DELETE CASCADE ON UPDATE CASCADE
+  FOREIGN KEY (question_id) REFERENCES questions (question_id) ON DELETE CASCADE ON UPDATE CASCADE,
+  UNIQUE (response_id, question_id, repeat)
 );
 
 -- add communities

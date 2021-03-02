@@ -413,13 +413,16 @@ RETURNS TABLE (
 )
 AS $FUNC$
 BEGIN
-  UPDATE answers
-     SET numeric_value = in_answer_numeric,
-         string_value = in_answer_string
-   WHERE response_id = in_response_id
-     AND question_id = in_question_id
-     AND repeat = in_repeat;
-  
+     INSERT
+       INTO answers
+            (response_id, question_id, repeat, numeric_value, string_value)
+     VALUES (in_response_id, in_question_id, in_repeat, 
+             in_answer_numeric, in_answer_string)
+ON CONFLICT (response_id, question_id, repeat)
+  DO UPDATE 
+        SET numeric_value = in_answer_numeric,
+            string_value = in_answer_string;
+         
   RETURN QUERY
     SELECT FOUND;
 END;
