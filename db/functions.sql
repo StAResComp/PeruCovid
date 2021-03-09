@@ -25,6 +25,30 @@ END;
 $FUNC$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
 --}}}
 
+/****f* functions.sql/getCommunities
+ * NAME
+ * getCommunities
+ * SYNOPSIS
+ * Return ID and name of each community
+ * RETURN VALUE
+ * INTEGER, VARCHAR(32) - community ID and name
+ ******
+ */
+CREATE OR REPLACE FUNCTION getCommunities () --{{{
+RETURNS TABLE (
+  community_id INTEGER,
+  community_string VARCHAR(32)
+)
+AS $FUNC$
+BEGIN
+  RETURN QUERY
+    SELECT c.community_id, c.community_string
+      FROM communities AS c
+  ORDER BY c.community_id;
+END;
+$FUNC$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
+--}}}
+
 /****f* functions.sql/getWeek
  * NAME
  * getWeek
@@ -347,6 +371,35 @@ END;
 $FUNC$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
 --}}}
 
+/****f* functions.sql/getResponses
+ * NAME
+ * getResponses
+ * SYNOPSIS
+ * Get ID of responses given community ID
+ * ARGUMENTS
+ *   * community_id - INTEGER - identifier of community
+ * RETURN VALUE
+ * INTEGER - response_id
+ ******
+ */
+CREATE OR REPLACE FUNCTION getResponses ( --{{{
+  in_community_id INTEGER
+)
+RETURNS TABLE (
+  response_id INTEGER
+)
+AS $FUNC$
+BEGIN
+  RETURN QUERY
+    SELECT r.response_id
+      FROM responses AS r
+INNER JOIN weeks AS w USING (week_id)
+     WHERE community_id = in_community_id
+  ORDER BY w.week;
+END;
+$FUNC$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
+--}}}
+
 /****f* functions.sql/addAnswer
  * NAME
  * addAnswer
@@ -469,6 +522,49 @@ BEGIN
        AND a.repeat = repeat_number 
        AND a.response_id = in_response_id
   ORDER BY q.order_num, q.repeat_number, si.item_number
+;
+END;
+$FUNC$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
+--}}}
+
+/****f* functions.sql/report
+ * NAME
+ * report
+ * SYNOPSIS
+ * Get response as a report
+ * ARGUMENTS
+ *   * in_response_id - INTEGER - ID of response
+ * RETURN VALUE
+ * Table with question details and answers from response
+ ******
+ */
+CREATE OR REPLACE FUNCTION report ( --{{{
+  in_response_id INTEGER
+)
+RETURNS TABLE (
+  question_id INTEGER,
+  question_string VARCHAR(255),
+  string_value TEXT
+)
+AS $FUNC$
+BEGIN
+  RETURN QUERY
+    SELECT r.question_id, r.question_string::VARCHAR(255), r.string_value
+      FROM (SELECT CASE WHEN q.question_id = 166 THEN 0 ELSE 1 END AS ord1,
+                   q.question_id, 
+                   q.question_string || COALESCE(' ' || si.item_string, '') || ' (' || q.repeat_number || ')' AS question_string,
+                   a.string_value,
+                   q.order_num, q.repeat_number, si.item_number
+              FROM (SELECT qi.question_id, qi.order_num, qi.question_string, 
+                           qi.item_id, qi.meta_question_id, repeat_number
+                      FROM questions AS qi, GENERATE_SERIES(1, repeats) AS repeat_number) AS q
+         LEFT JOIN series_items AS si USING (item_id)
+         LEFT JOIN series AS s USING (series_id)
+         LEFT JOIN answers AS a 
+                ON a.question_id = q.question_id 
+               AND a.repeat = repeat_number 
+               AND a.response_id = in_response_id) AS r
+  ORDER BY r.ord1, r.order_num, r.repeat_number, r.item_number
 ;
 END;
 $FUNC$ LANGUAGE plpgsql SECURITY DEFINER STABLE;

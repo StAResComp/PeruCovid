@@ -40,8 +40,7 @@ function email(array $errors, array $csv, string $community, string $respDate) {
     $xlsx = \SimpleXLSXGen::fromArray($csv);
 
     $attachment = chunk_split(base64_encode((string) $xlsx));
-    file_put_contents('/tmp/test.csv', $attachment);
-
+    //file_put_contents('/tmp/test.csv', $attachment);
     
     // prepare filename
     $filename = sprintf('%s_%s.xlsx', 
