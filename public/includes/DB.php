@@ -30,16 +30,20 @@ class DB {
      * __construct
      * SYNOPSIS
      * Creates connection to database using defined DSN and credentials.
+     * ARGUMENTS
+     *   * transaction - boolean - default true to start transaction
      ******
      */
-    public function __construct() { //{{{
+    public function __construct(bool $transaction=true) { //{{{
         include 'DB_config.php';
         
 				$this->pdo = new \PDO($PC_DSN, $PC_DB_USER, $PC_DB_PASS);
 				$this->pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
         
         // start transaction, which will need to be committed
-        $this->pdo->beginTransaction();
+        if ($transaction) {
+            $this->pdo->beginTransaction();
+        }
     }
     //}}}
     
@@ -141,7 +145,35 @@ class DB {
         $this->pdo->commit();
     }
     //}}}
-    
+
+    /****** DB.php/beginTransaction
+     * NAME
+     * beginTransaction
+     * SYNOPSIS
+     * Start a new transaction
+     * RETURN VALUE
+     * None
+     ******
+     */
+    public function beginTransaction() { //{{{
+        $this->pdo->beginTransaction();
+    }
+    //}}}
+
+    /****** DB.php/rollback
+     * NAME
+     * rollback
+     * SYNOPSIS
+     * Rollback transaction
+     * RETURN VALUE
+     * None
+     ******
+     */
+    public function rollback() { //{{{
+        $this->pdo->rollback();
+    }
+    //}}}
+
     /****** DB.php/__destruct
      * NAME
      * __descruct

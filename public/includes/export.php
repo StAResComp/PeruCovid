@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace PERUCOVID;
 
-/****f* ingest.php/export
+/****f* export.php/export
  * NAME
  * ingest
  * SYNOPSIS

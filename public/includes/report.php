@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace PERUCOVID;
 
-require_once 'SimpleXLSXGen.php';
+require_once 'email.php';
 
 // rotate array 90 degrees clockwise
 // https://stackoverflow.com/questions/30087158/how-can-i-rotate-a-2d-array-in-php-by-90-degrees
@@ -12,18 +12,25 @@ require_once 'SimpleXLSXGen.php';
 
 // generate report with responses grouped by community, ordered by date
 function report() { //{{{
-    // connect to database
-    $db = new DB();
+    // answers to reorder
+    $reorder = ['landing' => 'Species'];
+    $reorders = [];
+    
+    // connect to database, no transaction right now
+    $db = new DB(false);
     $db->setFetch(\PDO::FETCH_NUM);
     
-    // create spreadsheet
-    $xlsx = new \SimpleXLSXGen();
+    // get data needed for reordering
+    foreach ($reorder as $q => $i) {
+        $reorders[$q] = $db->getQuestion($q);
+    }
     
     // get community data and remove header row
     $cResp = $db->getCommunities();
     array_shift($cResp);
     
     // array to hold full data from all communities
+    $sheets = [];
     $all = [];
     
     // loop over communities
@@ -36,11 +43,23 @@ function report() { //{{{
         
         // loop over responses for community
         foreach ($rResp as $i => $r) {
+            // start transaction
+            $db->beginTransaction();
+            
+            // reorder some rows
+            foreach ($reorder as $question => $item) {
+                $db->reorder($r[0], $question, $item);
+            }
+            
             // get data for response and remove header row
             $resp = $db->report($r[0]);
             array_shift($resp);
+            
+            // rollback database
+            $db->rollback();
+            
             // transpose response array
-            $resp = array_map(NULL, ...$resp);
+            $resp = array_map(NULL, ... $resp);
             
             // only keep 3rd row after first response
             if ($i > 0) {
@@ -49,8 +68,8 @@ function report() { //{{{
             
             $sheet = array_merge($sheet, $resp);
         }
-
-        $xlsx->addSheet($sheet, $c[1]);
+        
+        $sheets[$c[1]] = $sheet;
         
         // remove first 2 rows from sheets after first one
         if ($j > 0) {
@@ -61,9 +80,10 @@ function report() { //{{{
         $all = array_merge($all, $sheet);
     }
     
-    $xlsx->addSheet($all, 'All');
+    $sheets['all'] = $all;
     
-    $xlsx->saveAs('/tmp/test.xlsx');
+    // send report
+    emailReport($sheets);
 }
 //}}}
 

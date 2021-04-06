@@ -144,4 +144,27 @@ function ingest(\stdClass $response, bool $corrections, int &$responseID, string
 }
 //}}}
 
+/****f* ingest.php/reorder
+ * NAME
+ * reorder
+ * SYNOPSIS
+ * Reorder repeated fields
+ * ARGUMENTS
+ *   * responseID - INTEGER - ID of response
+ ******
+ */
+function reorder(int $responseID) { //{{{
+    // question string and series item to use for ordering
+    // e.g. reorder repeating 'landing' answers using 'Species' item
+    $fields = ['landing' => 'Species'];
+    
+    // connect to database
+    $db = new DB();
+    
+    foreach ($fields as $qField => $sField) {
+        $db->reorder($responseID, $qField, $sField);
+    }
+}
+//}}}
+
 ?>

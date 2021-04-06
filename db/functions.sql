@@ -297,13 +297,16 @@ RETURNS TABLE (
   question_id INTEGER,
   question_string VARCHAR(64),
   item_id INTEGER,
-  repeats INTEGER
+  repeats INTEGER,
+  item_string VARCHAR(128)
 )
 AS $FUNC$
 BEGIN
   RETURN QUERY
-    SELECT q.question_id, q.question_string, q.item_id, q.repeats
+    SELECT q.question_id, q.question_string, q.item_id, q.repeats,
+           si.item_string
       FROM questions AS q
+INNER JOIN series_items AS si USING (item_id)
      WHERE q.question_string = in_question_string
         OR in_question_string SIMILAR TO CONCAT(q.question_string, '[0-9]%');
 END;
@@ -568,5 +571,58 @@ BEGIN
 ;
 END;
 $FUNC$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
+--}}}
+
+/****f* functions.sql/reorder
+ * NAME
+ * reorder
+ * SYNOPSIS
+ * Reorder answers to given question, using item_string to identify sub-answer to sort on
+ * ARGUMENTS
+ *   * in_response_id - INTEGER - ID of response to reorder
+ *   * in_question_string - VARCHAR - question to reorder answers to
+ *   * in_item_string - VARCHAR - sub-answer to use for ordering
+ * RETURN VALUE
+ * Boolean - true when answers updated
+ ******
+ */
+CREATE OR REPLACE FUNCTION reorder ( --{{{
+  in_response_id INTEGER,
+  in_question_string VARCHAR(64),
+  in_item_string VARCHAR(128)
+)
+RETURNS TABLE (
+  updated BOOLEAN
+)
+AS $FUNC$
+BEGIN
+    -- update repeat in answers to avoid collisions
+    UPDATE answers AS a
+       SET repeat = repeat + q.repeats
+      FROM questions AS q
+     WHERE q.question_id = a.question_id
+       AND q.question_string = in_question_string
+       AND a.response_id = in_response_id;
+       
+    -- update repeat again using ordering based on in_item_string
+    UPDATE answers AS a
+       SET repeat = o.new_repeat
+      FROM questions AS q,
+           (SELECT repeat AS old_repeat, ROW_NUMBER() OVER (ORDER BY string_value) AS new_repeat
+              FROM answers AS ao
+        INNER JOIN questions as qo USING (question_id)
+        INNER JOIN series_items AS sio USING (item_id)
+             WHERE qo.question_string = in_question_string
+               AND sio.item_string = in_item_string
+               AND ao.response_id = in_response_id) AS o
+     WHERE q.question_id = a.question_id
+       AND q.question_string = in_question_string
+       AND a.response_id = in_response_id
+       AND a.repeat = o.old_repeat;
+    
+    RETURN QUERY
+      SELECT FOUND;
+END;
+$FUNC$ LANGUAGE plpgsql SECURITY DEFINER VOLATILE;
 --}}}
 

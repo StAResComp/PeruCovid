@@ -4,29 +4,29 @@ declare(strict_types=1);
 
 namespace PERUCOVID;
 
-require_once 'SimpleXLSXGen.php';
+require_once 'xlsx.php';
 
 /****f* email.php/email
  * NAME
  * email
  * SYNOPSIS
- * Send error to predefined recipients
+ * Send response to predefined recipients
  * ARGUMENTS
  *   * errors - array - array of error messages
  *   * csv - array - array to be turned into CSV string
+ *   * community - string - name of community response is from
+ *   * respDate - string - week response covers
  * RETURN VALUE
- * None
+ * Boolean - true when email is sent
  * NOTES
  * https://stackoverflow.com/questions/12301358/send-attachments-with-php-mail
  ******
  */
-function email(array $errors, array $csv, string $community, string $respDate) { //{{{
+function emailResponse(array $errors, array $csv, string $community, string $respDate) : bool { //{{{
     // read strings from ini file
     $ini = parse_ini_file(INI_FILE);
     // correct newline for email
     $nl = "\r\n";
-    // string to separate content
-    $sep = md5((string) time());
 
     // format message
     $message = '';
@@ -37,32 +37,62 @@ function email(array $errors, array $csv, string $community, string $respDate) {
     }
     
     // serialise CSV array
-    $xlsx = \SimpleXLSXGen::fromArray($csv);
-
-    $attachment = chunk_split(base64_encode((string) $xlsx));
-    //file_put_contents('/tmp/test.csv', $attachment);
+    $sheet = sprintf('%s %s', $community, $respDate);
+    $attachment = xlsx([$sheet => $csv]);
     
     // prepare filename
     $filename = sprintf('%s_%s.xlsx', 
                         str_replace(' ', '', $community),
                         str_replace(' ', '', $respDate));
     
-    $headers = [];
-    $body = [];
+    return email($ini['sender']['name'], $ini['sender']['address'],
+                 $ini['subject'], $ini['recipients'],
+                 $message, $attachment, $filename);
+}
+//}}}
+
+function emailReport(array $sheets) : bool { //{{{
+    // read strings from ini file
+    $ini = parse_ini_file(INI_FILE);
+    // correct newline for email
+    $nl = "\r\n";
+    
+    // get current date
+    $today = date('Y-m-d');
+
+    // format message and filename
+    $message = sprintf('Report of responses submitted by %s%s', $today, $nl);
+    $filename = sprintf('Report_%s.xlsx', $today);
+    
+    // serialise XLSX
+    $attachment = xlsx($sheets);
+
+    return email($ini['sender']['name'], $ini['sender']['address'],
+                 $ini['report_subject'], $ini['report_recipients'],
+                 $message, $attachment, $filename);
+}
+//}}}
+
+function email(string $senderName, string $senderEmail, string $subject, array $recipients, string $message, string $attachment, string $filename) : bool { //{{{
+    // string to separate content
+    $sep = md5((string) time());
+    // correct newline for email
+    $nl = "\r\n";
     
     // header
-    $headers[] = sprintf('From: %s <%s>', 
-                         $ini['sender']['name'], $ini['sender']['address']);
+    $headers = [];
+    $headers[] = sprintf('From: %s <%s>', $senderName, $senderEmail);
     $headers[] = 'MIME-Version: 1.0';
-    $headers[] = sprintf('Content-Type: multipart/mixed; boundary="%s"',
-                         $sep);
+    $headers[] = sprintf('Content-Type: multipart/mixed; boundary="%s"', $sep);
     $headers[] = 'Content-Transfer-Encoding: 7bit';
     $headers[] = 'This is a MIME encoded message.';
     
     // message
+    $body = [];
     $body[] = sprintf('--%s', $sep);
     $body[] = 'Content-Type: text/plain; charset="UTF-8"';
     $body[] = 'Content-Transfer-Encoding: 8bit';
+    $body[] = '';
     $body[] = $message;
     
     // attachment
@@ -74,9 +104,9 @@ function email(array $errors, array $csv, string $community, string $respDate) {
     $body[] = '';
     $body[] = $attachment;
     $body[] = sprintf('--%s--', $sep);
-                        
-    return mail(implode(', ', $ini['recipients']),
-                $ini['subject'],
+
+    return mail(implode(', ', $recipients),
+                $subject,
                 implode($nl, $body), implode($nl, $headers));
 }
 //}}}
