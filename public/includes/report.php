@@ -84,12 +84,18 @@ function report() { //{{{
     
     // landing data
     $lResp = $db->landings();
-    // drop header row
-    array_shift($lResp);
+    
+    // add headers
+    $headers = array_shift($lResp);
+    for ($i = 0; $i < 56; ++ $i) {
+        $headers = array_merge($headers, array_slice($headers, 2, 9));
+    }
+    
+    $landing = [$headers];
     
     // start with first row
-    $landing = [array_shift($lResp)];
-    $l = 0;
+    $landing[] = array_shift($lResp);
+    $l = 1;
     
     foreach ($lResp as $row) {
         // different community/week
@@ -105,7 +111,6 @@ function report() { //{{{
     }
     
     $sheets['landing'] = $landing;
-    file_put_contents('/tmp/landing.csv', print_r($landing, true));
     
     // send report
     emailReport($sheets);
