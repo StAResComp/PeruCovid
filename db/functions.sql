@@ -626,3 +626,61 @@ END;
 $FUNC$ LANGUAGE plpgsql SECURITY DEFINER VOLATILE;
 --}}}
 
+CREATE OR REPLACE FUNCTION landings ( --{{{
+)
+RETURNS TABLE (
+  community VARCHAR(32),
+  response_date DATE,
+  species VARCHAR(32),
+  weight TEXT,
+  price_min TEXT,
+  price_max TEXT,
+  local_merchants TEXT,
+  restaurants TEXT,
+  wholesalers TEXT,
+  processing TEXT,
+  export TEXT
+)
+AS $FUNC$
+BEGIN
+  RETURN QUERY
+    SELECT c.community_string, w.week,
+           s.species_string, a2.string_value, a3.string_value,
+           a4.string_value, a5.string_value, a6.string_value,
+           a7.string_value, a8.string_value, a9.string_value
+      FROM responses AS r
+CROSS JOIN species AS s
+INNER JOIN communities AS c ON c.community_id = r.community_id
+INNER JOIN weeks AS w USING (week_id)
+ LEFT JOIN answers AS a1 ON a1.question_id = 78 
+       AND a1.response_id = r.response_id 
+       AND a1.string_value = s.species_string
+ LEFT JOIN answers AS a2 ON a2.question_id = 79
+       AND a2.response_id = r.response_id
+       AND a2.repeat = a1.repeat
+ LEFT JOIN answers AS a3 ON a3.question_id = 80
+       AND a3.response_id = r.response_id
+       AND a3.repeat = a1.repeat
+ LEFT JOIN answers AS a4 ON a4.question_id = 81
+       AND a4.response_id = r.response_id
+       AND a4.repeat = a1.repeat
+ LEFT JOIN answers AS a5 ON a5.question_id = 82
+       AND a5.response_id = r.response_id
+       AND a5.repeat = a1.repeat
+ LEFT JOIN answers AS a6 ON a6.question_id = 83
+       AND a6.response_id = r.response_id
+       AND a6.repeat = a1.repeat
+ LEFT JOIN answers AS a7 ON a7.question_id = 84
+       AND a7.response_id = r.response_id
+       AND a7.repeat = a1.repeat
+ LEFT JOIN answers AS a8 ON a8.question_id = 85
+       AND a8.response_id = r.response_id
+       AND a8.repeat = a1.repeat
+ LEFT JOIN answers AS a9 ON a9.question_id = 86
+       AND a9.response_id = r.response_id
+       AND a9.repeat = a1.repeat
+  ORDER BY c.community_string, w.week, s.species_id;
+END;
+$FUNC$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
+--}}}
+

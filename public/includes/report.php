@@ -82,6 +82,31 @@ function report() { //{{{
     
     $sheets['all'] = $all;
     
+    // landing data
+    $lResp = $db->landings();
+    // drop header row
+    array_shift($lResp);
+    
+    // start with first row
+    $landing = [array_shift($lResp)];
+    $l = 0;
+    
+    foreach ($lResp as $row) {
+        // different community/week
+        if ($row[0] != $landing[$l][0] || $row[1] != $landing[$l][1]) {
+            // start new row
+            $landing[] = $row;
+            ++ $l;
+        }
+        else {
+            //array_push($landing[$l], array_slice($row, 2));
+            $landing[$l] = array_merge($landing[$l], array_slice($row, 2));
+        }
+    }
+    
+    $sheets['landing'] = $landing;
+    file_put_contents('/tmp/landing.csv', print_r($landing, true));
+    
     // send report
     emailReport($sheets);
 }
