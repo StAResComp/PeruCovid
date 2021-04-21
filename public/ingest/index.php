@@ -59,7 +59,7 @@ try {
         $errors[] = ['NoCSV'];
     }
     
-    email($errors, $csv, $community, $respDate);
+    emailResponse($errors, $csv, $community, $respDate);
     
     if (!$errors) {
         $message = 'success';

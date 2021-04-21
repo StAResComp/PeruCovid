@@ -306,7 +306,7 @@ BEGIN
     SELECT q.question_id, q.question_string, q.item_id, q.repeats,
            si.item_string
       FROM questions AS q
-INNER JOIN series_items AS si USING (item_id)
+ LEFT JOIN series_items AS si USING (item_id)
      WHERE q.question_string = in_question_string
         OR in_question_string SIMILAR TO CONCAT(q.question_string, '[0-9]%');
 END;

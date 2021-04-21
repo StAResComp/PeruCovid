@@ -105,7 +105,6 @@ function report() { //{{{
             ++ $l;
         }
         else {
-            //array_push($landing[$l], array_slice($row, 2));
             $landing[$l] = array_merge($landing[$l], array_slice($row, 2));
         }
     }
