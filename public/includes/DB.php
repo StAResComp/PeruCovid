@@ -117,6 +117,56 @@ class DB {
     }
     //}}}
 
+    /****** DB.php/exec
+     * NAME
+     * exec
+     * SYNOPSIS
+     * Call to execute abritrary SQL statements
+     * ARGUMENTS
+     * sql - string - SQL with placeholders for arguments
+     * args - array - array of arguments to pass as parameters to the statement
+     * RETURN VALUE
+     * Array of result stdClass objects
+     ******
+     */
+    public function exec(string $sql, array $args) : array { //{{{
+				$results = [];
+
+				try {
+						// prepare statement
+						$stmt = $this->pdo->prepare($sql);
+            $stmt->setFetchMode($this->fetch);
+
+						// bind procedure parameters
+						foreach ($args as $i => $value) {
+								$stmt->bindValue($i + 1, $value);
+						}
+
+						// execute procedure
+						$stmt->execute();
+
+            $results = $stmt->fetchAll();
+            
+            // add columns if fetching numbered array
+            if (is_array($results) && \PDO::FETCH_NUM == $this->fetch) {
+                $cols = [];
+                for ($i = 0, $l = $stmt->columnCount(); $i < $l; ++ $i) {
+                    $meta = $stmt->getColumnMeta($i);
+                    $cols[] = $meta['name'];
+                }
+                
+                array_unshift($results, $cols);
+            }
+				}
+				catch (\PDOException $e) {
+						$this->errorMessage = $e->getMessage();
+						$this->errorCode = $e->getCode();
+				}
+
+				return $results;
+    }
+    //}}}
+
     /****** DB.php/getError
      * NAME
      * getError
