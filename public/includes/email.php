@@ -73,6 +73,29 @@ function emailReport(array $sheets) : bool { //{{{
 }
 //}}}
 
+// prepare email containing stats attachment
+function emailStats(array $sheets) : bool { //{{{
+    // read strings from ini file
+    $ini = parse_ini_file(INI_FILE);
+    // correct newline for email
+    $nl = "\r\n";
+    
+    // get current date
+    $today = date('Y-m-d');
+
+    // format message and filename
+    $message = sprintf('Stats on responses submitted by %s%s', $today, $nl);
+    $filename = sprintf('Stats_%s.xlsx', $today);
+    
+    // serialise XLSX
+    $attachment = xlsx($sheets);
+
+    return email($ini['sender']['name'], $ini['sender']['address'],
+                 $ini['report_subject'], $ini['report_recipients'],
+                 $message, $attachment, $filename);
+}
+//}}}
+
 function email(string $senderName, string $senderEmail, string $subject, array $recipients, string $message, string $attachment, string $filename) : bool { //{{{
     // string to separate content
     $sep = md5((string) time());
