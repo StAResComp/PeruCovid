@@ -71,7 +71,7 @@ function ingest(\stdClass $response, bool $corrections, int &$responseID, string
     // loop over fields in response
     foreach ($response as $field => $value) {
         // get information about question if value not empty
-        if (!$value || 
+        if ('' === $value ||  // test for empty string, so that numeric 0s pass through
             '' == str_replace(array_merge($delims, [' ']), '', $value) ||
             !($qResp = $db->getQuestion($field))) {
             continue;
@@ -100,8 +100,8 @@ function ingest(\stdClass $response, bool $corrections, int &$responseID, string
             // trim string
             $answer = is_string($answer) ? trim($answer) : $answer;
             
-            // check for empty answer
-            if ('' === $answer) {
+            // check for empty answer or negative number
+            if ('' === $answer || $answer < 0) {
                 continue;
             }
             
