@@ -109,7 +109,7 @@ fig12 <- function() {
 
   data$unique <- paste(data$community_string, data$week, data$`repeat`)
   
-  data <- data %>% select(question_id,string_value,community_string,week,numeric_value,unique)
+  data <- data %>% select(question_id, string_value, community_string, week, numeric_value, unique)
 
   data_a <- data %>% filter(question_id=="78")
   data_b <- data %>% filter(question_id=="79") %>% select(unique,numeric_value)
@@ -120,14 +120,16 @@ fig12 <- function() {
   data_e <- data_e %>% full_join(data_c, by = "unique")
   data_e <- data_e %>% full_join(data_d, by = "unique")
   
-  data_e <- data_e %>% select(question_id,string_value,community_string,week,numeric_value.y,numeric_value.x.x,numeric_value.y.y)
+  data_e <- data_e %>% select(question_id, string_value, community_string, week, numeric_value.y, numeric_value.x.x, numeric_value.y.y)
   colnames(data_e) <- c("question_id", "species", "community", "week", "landings","min_price","max_price")
   
   data_e$mean_price <- (data_e$min_price + data_e$max_price) / 2
   data_e$land_value <- data_e$landings * data_e$mean_price
   
-  #data_e[complete.cases(data_e$community),]
-  data_e %>% complete(community, species, week)
+  data_f <- data_e %>% complete(community, species, week)
+  
+  # reorder columns
+  data_f[, c('species', 'community', 'week', 'landings', 'land_value', 'min_price', 'max_price', 'mean_price')]
 }
 
 #Fig. 14 Number of active sellers
