@@ -81,7 +81,7 @@ fig8 <- function() {
   colnames(data)<-c("week", "community", "number_tests")
 
   #add values for each test
-  data <- data %>% group_by(week, community) %>% summarise(n_tests=sum(number_tests))
+  data <- data %>% group_by(week, community) %>% summarise(n_tests=sum(number_tests, na.rm=TRUE))
 
   data %>% complete(week, community)#complete missing levels of date per community
 }
@@ -97,7 +97,7 @@ fig11 <- function() {
   colnames(data)<-c("week", "community", "number_vaccines")
 
   #add values for each test
-  data <- data %>% group_by(week, community) %>% summarise(number_vaccines=sum(number_vaccines))
+  data <- data %>% group_by(week, community) %>% summarise(number_vaccines=sum(number_vaccines, na.rm=TRUE))
 
   data %>% complete(week, community)#complete missing levels of date per community
 }
@@ -154,7 +154,7 @@ date <- argv[1]
 
 # read credentials from pgpass file
 deets <- scan(file="~/.pgpass", sep=":", what=list('', '', '', '', ''))
-line <- 2 # line to choose
+line <- 4 # line to choose
 
 # connect to database
 drv <- dbDriver("PostgreSQL")

@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS species (
   species_string VARCHAR(32)
 );
 
-INSERT INTO SPECIES (species_string) VALUES
+INSERT INTO species (species_string) VALUES
   ('Anchoveta'),
   ('Anguila'),
   ('Atún aleta amarilla'),
@@ -28,8 +28,10 @@ INSERT INTO SPECIES (species_string) VALUES
   ('Congrio'),
   ('Congrio gato'),
   ('Doncella'),
+  ('El colorado'),
   ('Espejo'),
   ('Falso volador'),
+  ('Guitarra'),
   ('Jurel'),
   ('Langosta'),
   ('Langostino'),
@@ -43,6 +45,7 @@ INSERT INTO SPECIES (species_string) VALUES
   ('Palmerona'),
   ('Palabritas'),
   ('Pampanito'),
+  ('Pava'),
   ('Peje gallo'),
   ('Pejeblanco'),
   ('Perico'),

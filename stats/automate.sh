@@ -7,7 +7,7 @@ DATE=`date "+%Y-%m-%d"`
 mkdir -p ${DATE}
 
 # run R code to generate CSVs
-./stats.R ${DATE} 2> /dev/null
+./stats.R ${DATE}  2> /dev/null
 
 # run PHP code to generate .xlsx and email to recipients
 php -f stats.php ${DATE}

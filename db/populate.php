@@ -36,7 +36,7 @@ foreach ($fields as $field => $params) {
         $repeats = isset($params->repeats) ? $params->repeats : 1;
         
         // order of question
-        $order = $params->order;
+        $order = isset($params->order) ? $params->order : NULL;
         
         // question uses a series
         if (isset($params->series)) {
