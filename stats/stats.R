@@ -125,10 +125,11 @@ fig12 <- function() {
   
   data_e$mean_price <- (data_e$min_price + data_e$max_price) / 2
   data_e$land_value <- data_e$landings * data_e$mean_price
+
+  # not sure if using complete and the drop_na cancel each other out
+  data_f <- data_e %>% complete(community, species, week) %>% drop_na(question_id)
   
-  data_f <- data_e %>% complete(community, species, week)
-  
-  # reorder columns
+  # reorder and remove columns
   data_f[, c('species', 'community', 'week', 'landings', 'land_value', 'min_price', 'max_price', 'mean_price')]
 }
 
