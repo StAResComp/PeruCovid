@@ -126,7 +126,7 @@ fig12 <- function() {
   data_e$mean_price <- (data_e$min_price + data_e$max_price) / 2
   data_e$land_value <- data_e$landings * data_e$mean_price
 
-  data_f <- data_e %>% complete(community, species, week) %>% inner_join(community_species)
+  data_f <- data_e %>% complete(community, species, week) %>% filter(!is.na(week)) %>% inner_join(community_species)
   
   # reorder and remove columns
   data_f[, c('species', 'community', 'week', 'landings', 'land_value', 'min_price', 'max_price', 'mean_price')]
