@@ -21,7 +21,12 @@ try {
     }
     
     // ingest response
-    ingest($response);
+    $responseID = 0;
+    $community = '';
+    $respDate = '';
+    
+    ingest($response, false, $responseID, $community, $respDate);
+    
     $message = 'success';
 }
 catch (\Throwable $e) {
