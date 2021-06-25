@@ -126,8 +126,7 @@ fig12 <- function() {
   data_e$mean_price <- (data_e$min_price + data_e$max_price) / 2
   data_e$land_value <- data_e$landings * data_e$mean_price
 
-  # not sure if using complete and the drop_na cancel each other out
-  data_f <- data_e %>% complete(community, species, week) %>% drop_na(question_id)
+  data_f <- data_e %>% complete(community, species, week) %>% inner_join(community_species)
   
   # reorder and remove columns
   data_f[, c('species', 'community', 'week', 'landings', 'land_value', 'min_price', 'max_price', 'mean_price')]
@@ -170,10 +169,11 @@ con <- dbConnect(drv,
   forceISOdate=TRUE)
 
 # fetch data from database
-answers <-set_utf8(dbGetQuery(con, "SELECT * FROM answers;"))
-communities <-set_utf8(dbGetQuery(con, "SELECT * FROM communities;"))
-responses <-set_utf8(dbGetQuery(con, "SELECT * FROM responses;"))
-weeks <-set_utf8(dbGetQuery(con, "SELECT * FROM weeks;"))
+answers <- set_utf8(dbGetQuery(con, "SELECT * FROM answers;"))
+communities <- set_utf8(dbGetQuery(con, "SELECT * FROM communities;"))
+responses <- set_utf8(dbGetQuery(con, "SELECT * FROM responses;"))
+weeks <- set_utf8(dbGetQuery(con, "SELECT * FROM weeks;"))
+community_species <- set_utf8(dbGetQuery(con, "SELECT species_string AS species, community_string AS community FROM species, communities WHERE EXISTS (SELECT 1 FROM answers INNER JOIN responses USING (response_id) WHERE responses.community_id = communities.community_id AND question_id = 78 AND string_value = species_string);"))
 
 # call functions for each figure's CSV
 funcs <- c('fig2', 'fig3', 'fig7', 'fig8', 'fig11', 'fig12', 'fig14', 'fig16')
