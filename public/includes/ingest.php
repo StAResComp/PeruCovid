@@ -35,6 +35,11 @@ function ingest(\stdClass $response, bool $corrections, int &$responseID, string
     // connect to DB - need to commit on success
     $db = new DB();
     
+    // make sure that weekStart is from last week (not for corrections)
+    if (!$corrections) {
+        $response->weekStart = lastMonday();
+    }
+    
     $community = $response->community;
     $respDate = $response->weekStart;
     
@@ -166,5 +171,36 @@ function reorder(int $responseID) { //{{{
     }
 }
 //}}}
+
+/****f* ingest.php/lastMonday
+ * NAME
+ * lastMonday
+ * SYNOPSIS
+ * Get date of last Monday
+ * RETURN VALUE
+ * Date string - last Monday
+ ******
+ */
+function lastMonday() : string { //{{{
+    // get today's day of the week
+    $now = new \DateTime();
+    $dayOfWeek = $now->format('w'); // Sunday = 0, Saturday = 6
+    
+    // how many days since this Monday
+    $dayDiff = ($dayOfWeek + 6) % 7;
+    // go back to this Monday
+    $thisMonday = $now->sub(new \DateInterval(sprintf('P%dD',
+                                                      $dayDiff)));
+    // Sunday today, so go to tomorrow
+    if ($dayOfWeek == 0) {
+        $thisMonday = $thisMonday->add(new \DateInterval('P1W'));
+    }
+    
+    // go to last Monday
+    $lastMonday = $thisMonday->sub(new \DateInterval('P1W'));
+    return $lastMonday->format('Y-m-d');
+}
+//}}}
+
 
 ?>
