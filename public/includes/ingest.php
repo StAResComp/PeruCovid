@@ -15,11 +15,12 @@ namespace PERUCOVID;
  *   * responseID - integer - passed by reference
  *   * community - string - passed by reference
  *   * respDate - string - passed by reference
+ *   * fixWeek - boolean - default true, if false, don't try to fix week
  * RETURN VALUE
  * Array of errors
  ******
  */
-function ingest(\stdClass $response, bool $corrections, int &$responseID, string &$community, string &$respDate) : array { //{{{
+function ingest(\stdClass $response, bool $corrections, int &$responseID, string &$community, string &$respDate, bool $fixWeek=true) : array { //{{{
     // delimiters for multi-answer fields
     $delims = ['|', ','];
     
@@ -36,7 +37,7 @@ function ingest(\stdClass $response, bool $corrections, int &$responseID, string
     $db = new DB();
     
     // make sure that weekStart is from last week (not for corrections)
-    if (!$corrections) {
+    if (!$corrections && $fixWeek) {
         $response->weekStart = lastMonday();
     }
     
@@ -192,9 +193,11 @@ function lastMonday() : string { //{{{
     $thisMonday = $now->sub(new \DateInterval(sprintf('P%dD',
                                                       $dayDiff)));
     // Sunday today, so go to tomorrow
-    if ($dayOfWeek == 0) {
+    // reporting now to go from Monday to Sunday
+    // for the previous Monday to Sunday
+    /*if ($dayOfWeek == 0) {
         $thisMonday = $thisMonday->add(new \DateInterval('P1W'));
-    }
+    }*/
     
     // go to last Monday
     $lastMonday = $thisMonday->sub(new \DateInterval('P1W'));
